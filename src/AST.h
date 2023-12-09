@@ -11,13 +11,10 @@ class Statement; // Top-level statement
 class Expression; // Binary operation of numbers and identifiers
 class AssignStatement; // Assignment statement like a = 3;
 class DecStatement; // Declaration statement like int a;
-class BooleanOp; // Boolean operation like 3 > 6*2;
-class WhileStatement;
 class IfStatement;
 class ElifStatement;
 class ElseStatement;
 class Condition;
-class ConditionSign;
 class LoopStatement;
 
 class ASTVisitor
@@ -28,16 +25,12 @@ public:
     virtual void visit(Expression &) {}
     virtual void visit(Base &) = 0;
     virtual void visit(Statement &) = 0;
-    virtual void visit(BinaryOp &) = 0;
     virtual void visit(DecStatement &) = 0;
     virtual void visit(AssignStatement &) = 0;
-    virtual void visit(BooleanOp &) = 0;
     virtual void visit(IfStatement &) = 0;
-    virtual void visit(WhileStatement &) = 0;
     virtual void visit(ElifStatement &) = 0;
     virtual void visit(ElseStatement &) = 0;
     virtual void visit(Condition &) = 0;
-    virtual void visit(ConditionSign &) = 0;
     virtual void visit(LoopStatement &) = 0;
 };
 
@@ -95,32 +88,6 @@ public:
     }
 };
 
-class WhileStatement : public Statement
-{
-
-private:
-    Conditions *Condition;
-    llvm::SmallVector<Statement *> Statements;
-
-public:
-    WhileStatement(Conditions *condition, llvm::SmallVector<Statement *> statements, StateMentType type) : Condition(condition), Statements(statements), Statement(type) {}
-
-    Conditions *getCondition()
-    {
-        return Condition;
-    }
-
-    llvm::SmallVector<Statement *> getStatements()
-    {
-        return Statements;
-    }
-
-    virtual void accept(ASTVisitor &V) override
-    {
-        V.visit(*this);
-    }
-};
-
 class IfStatement : public Statement
 {
 
@@ -131,7 +98,8 @@ private:
     ElseStatement *Else;
 
 public:
-    IfStatement(Conditions *condition, llvm::SmallVector<Statement *> statements, StateMentType type) : Condition(condition), Statements(statements), Statement(type), Else(nullptr) {}
+    IfStatement(Conditions *condition, llvm::SmallVector<Statement *> statements,llvm::SmallVector<ElifStatement *> Elifs,ElseStatement *Else, StateMentType type) : 
+    Condition(condition), Statements(statements), Statement(type),Elifs(Elifs) Else(Else) {}
 
     Conditions *getCondition()
     {
@@ -161,13 +129,14 @@ public:
 
 class ElifStatement : public Statement
 {
-
+    
 private:
     Conditions *Condition;
     llvm::SmallVector<Statement *> Statements;
 
 public:
-    ElifStatement(Conditions *condition, llvm::SmallVector<Statement *> statements, StateMentType type) : Condition(condition), Statements(statements), Statement(type) {}
+    ElifStatement(Conditions *condition, llvm::SmallVector<Statement *> statements, StateMentType type) :
+     Condition(condition), Statements(statements), Statement(type) {}
 
     Conditions *getCondition()
     {
@@ -192,7 +161,8 @@ private:
     llvm::SmallVector<Statement *> Statements;
 
 public:
-    ElseStatement(llvm::SmallVector<Statement *> statements, StateMentType type) : Statements(statements), Statement(type) {}
+    ElseStatement(llvm::SmallVector<Statement *> statements, StateMentType type) : 
+    Statements(statements), Statement(type) {}
 
     llvm::SmallVector<Statement *> getStatements()
     {
@@ -213,7 +183,8 @@ private:
     llvm::SmallVector<Statement *> Statements;
 
 public:
-    LoopStatement(Conditions *condition, llvm::SmallVector<Statement *> statements, StateMentType type) : Condition(condition), Statements(statements), Statement(type) {}
+    LoopStatement(Conditions *condition, llvm::SmallVector<Statement *> statements, StateMentType type) : 
+    Condition(condition), Statements(statements), Statement(type) {}
 
     Conditions *getCondition()
     {
@@ -240,7 +211,8 @@ private:
     ExprVector Exprs;
 
 public:
-    DecStatement(VarVector *Vars, ExprVector *Exprs) : Vars(Vars), Exprs(Exprs), Statement(StateMentType::Declaration) {}
+    DecStatement(VarVector *Vars, ExprVector *Exprs) :
+     Vars(Vars), Exprs(Exprs), Statement(StateMentType::Declaration) {}
     Expression *getVars()
     {
         return lvalue;
@@ -276,7 +248,8 @@ private:
     Expression *rvalue;
 
 public:
-    AssignStatement(Expression *lvalue, AssOp AssignmentOp, Expression *rvalue) : lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(StateMentType::Assignment) {}
+    AssignStatement(Expression *lvalue, AssOp AssignmentOp, Expression *rvalue) :
+     lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(StateMentType::Assignment) {}
     Expression *getLValue()
     {
         return lvalue;
@@ -379,11 +352,11 @@ private:
     Operator Op;      // Operator of the boolean operation
 
 public:
-    Condition(Expression *left, ConditionSign *Op, Expression *right) : Left(left), Op(Op), Right(right) {}
+    Condition(Expression *left, Operator Op, Expression *right) : Left(left), Op(Op), Right(right) {}
 
     Expression *getLeft() { return Left; }
 
-    ConditionSign *getSign() { return Sign; }
+    Operator getSign() { return Sign; }
 
     Expression *getRight() { return Right; }
 

@@ -92,23 +92,23 @@ class IfStatement : public Statement
 {
 
 private:
-    Conditions *Condition;
-    llvm::SmallVector<Statement *> Statements;
+    Conditions *condition;
+    llvm::SmallVector<Assignment *> Assignments;
     llvm::SmallVector<ElifStatement *> Elifs;
     ElseStatement *Else;
 
 public:
-    IfStatement(Conditions *condition, llvm::SmallVector<Statement *> statements,llvm::SmallVector<ElifStatement *> Elifs,ElseStatement *Else, StateMentType type) : 
-    Condition(condition), Statements(statements), Statement(type),Elifs(Elifs) Else(Else) {}
+    IfStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments,llvm::SmallVector<ElifStatement *> Elifs,ElseStatement *Else, StateMentType type) : 
+    condition(condition), Assignments(Assignments), Statement(type),Elifs(Elifs) Else(Else) {}
 
     Conditions *getCondition()
     {
-        return Condition;
+        return condition;
     }
 
-    llvm::SmallVector<Statement *> getStatements()
+    llvm::SmallVector<Statement *> getAssignments()
     {
-        return Statements;
+        return Assignments;
     }
 
     llvm::SmallVector<ElifStatement *> getElifs()
@@ -131,21 +131,21 @@ class ElifStatement : public Statement
 {
     
 private:
-    Conditions *Condition;
-    llvm::SmallVector<Statement *> Statements;
+    Conditions *condition;
+    llvm::SmallVector<Assignment *> Assignments;
 
 public:
-    ElifStatement(Conditions *condition, llvm::SmallVector<Statement *> statements, StateMentType type) :
-     Condition(condition), Statements(statements), Statement(type) {}
+    ElifStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StateMentType type) :
+     condition(condition), Assignments(Assignments), Statement(type) {}
 
     Conditions *getCondition()
     {
-        return Condition;
+        return condition;
     }
 
     llvm::SmallVector<Statement *> getStatements()
     {
-        return Statements;
+        return Assignments;
     }
 
     virtual void accept(ASTVisitor &V) override
@@ -158,15 +158,15 @@ class ElseStatement : public Statement
 {
 
 private:
-    llvm::SmallVector<Statement *> Statements;
+    llvm::SmallVector<Assignment *> Assignments;
 
 public:
-    ElseStatement(llvm::SmallVector<Statement *> statements, StateMentType type) : 
-    Statements(statements), Statement(type) {}
+    ElseStatement(llvm::SmallVector<Assignment *> Assignments, StateMentType type) : 
+    Assignments(Assignments), Statement(type) {}
 
-    llvm::SmallVector<Statement *> getStatements()
+    llvm::SmallVector<Assignment *> getAssignments()
     {
-        return Statements;
+        return Assignment;
     }
 
     virtual void accept(ASTVisitor &V) override
@@ -179,21 +179,21 @@ class LoopStatement : public Statement
 {
 
 private:
-    Conditions *Condition;
-    llvm::SmallVector<Statement *> Statements;
+    Conditions *condition;
+    llvm::SmallVector<Assignment *> Assignments;
 
 public:
-    LoopStatement(Conditions *condition, llvm::SmallVector<Statement *> statements, StateMentType type) : 
-    Condition(condition), Statements(statements), Statement(type) {}
+    LoopStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StateMentType type) : 
+    Condition(condition), Assignments(Assignments), Statement(type) {}
 
     Conditions *getCondition()
     {
-        return Condition;
+        return condition;
     }
 
-    llvm::SmallVector<Statement *> getStatements()
+    llvm::SmallVector<Assignment *> getAssignments()
     {
-        return Statements;
+        return Assignments;
     }
 
     virtual void accept(ASTVisitor &V) override

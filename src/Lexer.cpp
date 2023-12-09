@@ -1,4 +1,4 @@
-#include "Lexer.h"
+#include "src/Lexer.h"
 
 // classifying characters
 namespace charinfo
@@ -41,10 +41,27 @@ void Lexer::next(Token &token)
             ++end;
         llvm::StringRef Name(BufferPtr, end - BufferPtr);
         Token::TokenKind kind;
-        if (Name == "type")
-            kind = Token::KW_type;
-        else if (Name == "int")
+
+        if (Name == "int")
             kind = Token::KW_int;
+        else if (Name=="if")
+            kind=Token::KW_if
+        else if (Name=="else")
+            kind=Token::KW_else
+        else if (Name=="elif")
+            kind=Token::KW_elif
+        else if (Name=="and")
+            kind=Token::KW_and
+        else if (Name=="or")
+            kind=Token::KW_or
+        else if (Name=="true")
+            kind=Token::KW_true
+        else if (Name=="false")
+            kind=Token::KW_false
+        else if (Name=="end")
+            kind=Token::end
+        else if (Name=="begin")
+            kind=Token::begin
         else
             kind = Token::ident;
         // generate the token
@@ -62,6 +79,30 @@ void Lexer::next(Token &token)
     }
     else
     {
+        char now=*BufferPtr;
+        char next=*(BufferPtr+1);
+        if (now=='+' && next=='=')
+            formToken(token, BufferPtr + 2, Token::plus_equal);
+        else if(now=='-' && next=='=')
+            formToken(token, BufferPtr + 2, Token::minus_equal);
+        else if (now =='*' && next=='=')
+            formToken(token, BufferPtr + 2, Token::star_equal);
+        else if (now=='/' && next=='=')
+            formToken(token, BufferPtr + 2, Token::slash_equal);
+        else if (now=='%' && next=='=')
+            formToken(token, BufferPtr + 2, Token::precent_equal);
+        else if (now=='=' && next=='=')
+            formToken(token, BufferPtr + 2, Token::equal_equal);
+        else if (now=='!' && next=='=')
+            formToken(token, BufferPtr + 2, Token::not_equal);
+        else if (now=='>' && next=='=')
+            formToken(token, BufferPtr + 2, Token::biger_equal);
+        else if (now=='<' && next=='=')
+            formToken(token, BufferPtr + 2, Token::less_equal);
+
+
+
+
         switch (*BufferPtr)
         {
 #define CASE(ch, tok)                         \
@@ -72,11 +113,19 @@ void Lexer::next(Token &token)
             CASE('-', Token::minus);
             CASE('*', Token::star);
             CASE('/', Token::slash);
+            CASE('%', Token::percent);
+            CASE('^',Token::power)
             CASE('(', Token::l_paren);
             CASE(')', Token::r_paren);
             CASE(';', Token::semicolon);
             CASE(',', Token::Token::comma);
             CASE('=', Token::equal);
+            CASE('>', Token::biger)
+            CASE('<',Token::less)
+
+
+            
+
 #undef CASE
         default:
             formToken(token, BufferPtr + 1, Token::unknown);

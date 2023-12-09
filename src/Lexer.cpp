@@ -1,4 +1,4 @@
-#include "src/Lexer.h"
+#include "Lexer.h"
 
 // classifying characters
 namespace charinfo
@@ -99,10 +99,8 @@ void Lexer::next(Token &token)
             formToken(token, BufferPtr + 2, Token::biger_equal);
         else if (now=='<' && next=='=')
             formToken(token, BufferPtr + 2, Token::less_equal);
-
-
-
-
+        
+        else{
         switch (*BufferPtr)
         {
 #define CASE(ch, tok)                         \
@@ -122,15 +120,12 @@ void Lexer::next(Token &token)
             CASE('=', Token::equal);
             CASE('>', Token::biger)
             CASE('<',Token::less)
-
-
-            
-
 #undef CASE
         default:
             formToken(token, BufferPtr + 1, Token::unknown);
         }
         return;
+        }
     }
 }
 

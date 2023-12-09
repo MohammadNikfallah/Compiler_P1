@@ -6,10 +6,9 @@
 #include "llvm/Support/raw_ostream.h"
 
 class AST; // Abstract Syntax Tree
-class Expression; // Top-level expression that is evaluated to boolean, int, or variable name at last
 class Base; // Top-level program
 class Statement; // Top-level statement
-class BinaryOp; // Binary operation of numbers and identifiers
+class Expression; // Binary operation of numbers and identifiers
 class AssignStatement; // Assignment statement like a = 3;
 class DecStatement; // Declaration statement like int a;
 class BooleanOp; // Boolean operation like 3 > 6*2;
@@ -237,7 +236,7 @@ class DecStatement : public Statement
 private:
     using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
     VarVector Vars;
-    using ExprVector = llvm::SmallVector<BinaryOp *>;
+    using ExprVector = llvm::SmallVector<Expression *>;
     ExprVector Exprs;
 
 public:
@@ -300,7 +299,7 @@ public:
 };
 
 
-class BinaryOp : public AST
+class Expression : public AST
 {
 public:
     enum Operator
@@ -319,7 +318,7 @@ private:
     Operator Op;      // Operator of the binary operation
 
 public:
-    BinaryOp(Operator Op, Expression *L, Expression *R) : Op(Op), Left(L), Right(R), Expression(ExpressionType::BinaryOpType) {}
+    Expression(Operator Op, Expression *L, Expression *R) : Op(Op), Left(L), Right(R), Expression(ExpressionType::ExpressionType) {}
 
     Expression *getLeft() { return Left; }
 

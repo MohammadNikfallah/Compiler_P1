@@ -68,85 +68,6 @@ public:
     }
 };
 
-
-class Expression : public AST
-{
-public:
-    enum ExpressionType
-    {
-        Number,
-        Identifier,
-        Boolean,
-        BinaryOpType,
-        BooleanOpType
-    };
-
-private:
-    ExpressionType Type; // can be number of variable name
-
-    // if it holds a number NumberVal is used else Value is
-    // used to store variable name
-    llvm::StringRef Value;
-    int NumberVal;
-    bool BoolVal;
-
-public:
-    Expression() {}
-    Expression(llvm::StringRef value) : Type(ExpressionType::Identifier), Value(value) {} // store string
-    Expression(int value) : Type(ExpressionType::Number), NumberVal(value) {}             // store number
-    Expression(bool value) : Type(ExpressionType::Boolean), BoolVal(value) {}            // store boolean
-    Expression(ExpressionType type) : Type(type) {}
-
-    bool isNumber()
-    {
-        if (Type == ExpressionType::Number)
-            return true;
-        return false;
-    }
-
-    bool isBoolean()
-    {
-        if (Type == ExpressionType::Boolean)
-            return true;
-        return false;
-    }
-
-    bool isVariable()
-    {
-        if (Type == ExpressionType::Identifier)
-            return true;
-        return false;
-    }
-
-    // returns identifier
-    llvm::StringRef getValue()
-    {
-        return Value;
-    }
-
-    int getNumber()
-    {
-        return NumberVal;
-    }
-
-    bool getBoolean()
-    {
-        return BoolVal;
-    }
-
-    // returns the kind of expression. can be identifier,
-    // number, or an operation
-    ExpressionType getKind()
-    {
-        return Type;
-    }
-
-    virtual void accept(ASTVisitor &V) override
-    {
-        V.visit(*this);
-    }
-};
-
 class Statement : public AST
 {
 public:
@@ -379,7 +300,7 @@ public:
 };
 
 
-class BinaryOp : public Expression
+class BinaryOp : public AST
 {
 public:
     enum Operator

@@ -15,19 +15,44 @@ public:
     {
         eoi,     // end of input
         unknown, // in case of error at the lexical level
-        ident,
-        number,
+        ident, //a
+        number, //3
         equal,
-        comma,
-        semicolon,
+        comma,//,
+        colon,//:
+        semicolon,//;
         plus,
         minus,
         star,
+        power,
         slash,
+        percent,
+        plus_equal,
+        minus_equal,
+        star_equal,
+        slash_equal,
+        precent_equal,
+        equal_equal,
+        not_equal,
+        less,
+        less_equal,
+        big,
+        big_equal,
         l_paren,
         r_paren,
-        KW_type,
-        KW_int
+        KW_int,
+        KW_if,
+        KW_elif,
+        KW_else,
+        KW_else,
+        KW_loopc,
+        KW_and,
+        KW_or,
+        KW_true,
+        KW_false,
+        begin,
+        end
+        
     };
 
 private:

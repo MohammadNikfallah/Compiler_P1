@@ -6,7 +6,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 class AST; // Abstract Syntax Tree
-class Base; // Top-level program
+class Root; // Top-level program
 class Statement; // Top-level statement
 class Expression; // Binary operation of numbers and identifiers
 class AssignStatement; // Assignment statement like a = 3;
@@ -23,7 +23,7 @@ public:
     // Virtual visit functions for each AST node type
     virtual void visit(AST &) {}
     virtual void visit(Expression &) {}
-    virtual void visit(Base &) = 0;
+    virtual void visit(Root &) = 0;
     virtual void visit(Statement &) = 0;
     virtual void visit(DecStatement &) = 0;
     virtual void visit(AssignStatement &) = 0;
@@ -41,14 +41,14 @@ public:
     virtual void accept(ASTVisitor &V) = 0;
 };
 
-// Base Node that contains all the syntax nodes
-class Base : public AST
+
+class Root : public AST
 {
 private:
     llvm::SmallVector<Statement *> statements; // Stores the list of expressions
 
 public:
-    Base(llvm::SmallVector<Statement *> Statements) : statements(Statements) {}
+    Root(llvm::SmallVector<Statement *> Statements) : statements(Statements) {}
     llvm::SmallVector<Statement *> getStatements() { return statements; }
 
     llvm::SmallVector<Statement *>::const_iterator begin() { return statements.begin(); }

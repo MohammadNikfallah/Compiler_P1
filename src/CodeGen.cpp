@@ -53,7 +53,7 @@ namespace
     }
 
     // Visit function for the GSM node in the AST.
-    virtual void visit(GSM &Node) override
+    virtual void visit(Root &Node) override
     {
       // Iterate over the children of the GSM node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
@@ -62,26 +62,29 @@ namespace
       }
     };
 
-    virtual void visit(Assignment &Node) override
+    virtual void visit(Statement &Node) override
     {
-      // Visit the right-hand side of the assignment and get its value.
-      Node.getRight()->accept(*this);
-      Value *val = V;
+      if (Node.getKind()==Statement::StatementType::Assignment)
+      {
+        AssignStatement* assignStatement=(AssignStatement*)&Node;
+        assignStatement->accept(*this);
+      }
+      else if (Node.getKind==Statement::StatementType::If)
+      {
+        IfStatement* ifStatement=(IfStatement*)&Node;
+        ifStatement->accept(*this);
+      }
+      else if(Node.getKind==Statement::StatementType::Loop)
+      {
+        LoopStatement* loopStatement=(LoopStatement*)&Node;
+        loopStatement->accept(*this);
+      }
+      else 
+      {
+        DecStatement* dec = (DecStatement*)&Node;
+        dec->accept(*this);
 
-      // Get the name of the variable being assigned.
-      auto varName = Node.getLeft()->getVal();
-
-      // Create a store instruction to assign the value to the variable.
-      Builder.CreateStore(val, nameMap[varName]);
-
-      // Create a function type for the "gsm_write" function.
-      FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
-
-      // Create a function declaration for the "gsm_write" function.
-      Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
-
-      // Create a call instruction to invoke the "gsm_write" function with the value.
-      CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
+      }
     };
 
     virtual void visit(Factor &Node) override

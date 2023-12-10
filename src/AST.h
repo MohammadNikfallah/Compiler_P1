@@ -63,7 +63,7 @@ public:
 class Statement : public AST
 {
 public:
-    enum StateMentType
+    enum StatementType
     {
         Declaration,
         Assignment,
@@ -72,16 +72,16 @@ public:
     };
 
 private:
-    StateMentType Type;
+    StatementType Type;
 
 public:
-    StateMentType getKind()
+    StatementType getKind()
     {
         return Type;
     }
 
 
-    Statement(StateMentType type) : Type(type) {}
+    Statement(StatementType type) : Type(type) {}
     virtual void accept(ASTVisitor &V) override
     {
         V.visit(*this);
@@ -98,7 +98,7 @@ private:
     ElseStatement *Else;
 
 public:
-    IfStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments,llvm::SmallVector<ElifStatement *> Elifs,ElseStatement *Else, StateMentType type) : 
+    IfStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments,llvm::SmallVector<ElifStatement *> Elifs,ElseStatement *Else, StatementType type) : 
     condition(condition), Assignments(Assignments), Statement(type),Elifs(Elifs) Else(Else) {}
 
     Conditions *getCondition()
@@ -135,7 +135,7 @@ private:
     llvm::SmallVector<Assignment *> Assignments;
 
 public:
-    ElifStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StateMentType type) :
+    ElifStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StatementType type) :
      condition(condition), Assignments(Assignments), Statement(type) {}
 
     Conditions *getCondition()
@@ -161,7 +161,7 @@ private:
     llvm::SmallVector<Assignment *> Assignments;
 
 public:
-    ElseStatement(llvm::SmallVector<Assignment *> Assignments, StateMentType type) : 
+    ElseStatement(llvm::SmallVector<Assignment *> Assignments, StatementType type) : 
     Assignments(Assignments), Statement(type) {}
 
     llvm::SmallVector<Assignment *> getAssignments()
@@ -183,7 +183,7 @@ private:
     llvm::SmallVector<Assignment *> Assignments;
 
 public:
-    LoopStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StateMentType type) : 
+    LoopStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StatementType type) : 
     Condition(condition), Assignments(Assignments), Statement(type) {}
 
     Conditions *getCondition()
@@ -212,7 +212,7 @@ private:
 
 public:
     DecStatement(VarVector *Vars, ExprVector *Exprs) :
-     Vars(Vars), Exprs(Exprs), Statement(StateMentType::Declaration) {}
+     Vars(Vars), Exprs(Exprs), Statement(StatementType::Declaration) {}
     Expression *getVars()
     {
         return lvalue;
@@ -249,7 +249,7 @@ private:
 
 public:
     AssignStatement(Final *lvalue, AssOp AssignmentOp, Expression *rvalue) :
-     lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(StateMentType::Assignment) {}
+     lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(StatementType::Assignment) {}
     Final *getLValue()
     {
         return lvalue;

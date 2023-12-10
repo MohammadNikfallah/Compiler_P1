@@ -380,7 +380,7 @@ private:
   llvm::StringRef Val;                       
 
 public:
-  Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
+  Final(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
 
   ValueKind getKind() { return Kind; }
 

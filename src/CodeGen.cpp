@@ -104,7 +104,7 @@ namespace
       }
     };
 
-    virtual void visit(BinaryOp &Node) override
+    virtual void visit(Expression &Node) override
     {
       // Visit the left-hand side of the binary operation and get its value.
       Node.getLeft()->accept(*this);
@@ -117,17 +117,30 @@ namespace
       // Perform the binary operation based on the operator type and create the corresponding instruction.
       switch (Node.getOperator())
       {
-      case BinaryOp::Plus:
+      case Expression::Operator::Plus:
         V = Builder.CreateNSWAdd(Left, Right);
         break;
-      case BinaryOp::Minus:
+      case Expression::Operator::Minus:
         V = Builder.CreateNSWSub(Left, Right);
         break;
-      case BinaryOp::Mul:
+      case Expression::Operator::Mul:
         V = Builder.CreateNSWMul(Left, Right);
         break;
-      case BinaryOp::Div:
+      case Expression::Operator::Div:
         V = Builder.CreateSDiv(Left, Right);
+        break;
+      case Expression::Operator::Mod:
+        Value* div = Builder.CreateSDiv(Left, Right);
+        Value* mult = Builder.CreateNSWMul(div, Right);
+        V = Builder.CreateNSWSub(Left, mult);
+        break;
+      case Expression::Operator::Pow:
+        for (int i = 0; i < Right; i++)
+        {
+          Left = CreateNSWMul(Left, Right);
+        }
+        V = Left;
+        
         break;
       }
     };
@@ -168,31 +181,62 @@ namespace
       llvm::SmallVector<llvm::StringRef, 8> vars=Node.getVars()
       llvm::SmallVector<Expression *> Exprs=Node.getExprs()
 
-
-
-
-      if (Node.getExpr())
-      {
-        // If there is an expression provided, visit it and get its value.
-        Node.getExpr()->accept(*this);
-        val = V;
-      }
-
       // Iterate over the variables declared in the declaration statement.
-      for (auto var_start = vars.begin(), var_end = vars.end(),; I != E; ++I)
+      for (auto var = vars.begin(), var_end = vars.end(),expr=Exprs.begin(); I != E; ++var )
       {
-        StringRef Var = *I;
+        llvm::StringRef Var = *var;
+        llvm::SmallVector<Expression *> Expr = *expr;
+        if (Expr)
+        {
+          // If there is an expression provided, visit it and get its value.
+          Expr->accept(*this);
+          val = V;
+          ++expr;
+          
+          nameMap[Var] = Builder.CreateAlloca(Int32Ty);
 
-        // Create an alloca instruction to allocate memory for the variable.
+        // Store the initial value (if any) in the variable's memory location.
+          if (val != nullptr)
+          {
+            Builder.CreateStore(val, nameMap[Var]);
+          }
+        }
+        else //set zero
+        {
         nameMap[Var] = Builder.CreateAlloca(Int32Ty);
 
         // Store the initial value (if any) in the variable's memory location.
         if (val != nullptr)
         {
-          Builder.CreateStore(val, nameMap[Var]);
+          Value* zero = ConstantInt::get(Type::getInt32Ty(M->getContext()), 0);
+          Builder.CreateStore(zero, nameMap[Var]);
         }
+        }
+        // Create an alloca instruction to allocate memory for the variable.
+        
       }
     };
+    virtual void visit(AssignStatement& Node) override
+        {
+            // Visit the right-hand side of the assignment and get its value.
+            Node.getRValue()->accept(*this);
+            Value* val = V;
+
+            // Get the name of the variable being assigned.
+            auto varName = Node.getLValue()->getValue();
+
+            // Create a store instruction to assign the value to the variable.
+            Builder.CreateStore(val, nameMap[varName]);
+            FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
+
+            // Create a function declaration for the "gsm_write" function.
+            Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
+
+            // Create a call instruction to invoke the "gsm_write" function with the value.
+            CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
+
+        }
+
   };
 }; // namespace
 

@@ -58,7 +58,7 @@ AST *Parser::parseMSM()
         }
         advance(); // TODO: watch this part
     }
-    return new GSM(exprs);
+    return new GSM(statement);
 _error2:
     while (Tok.getKind() != Token::eoi)
         advance();
@@ -126,7 +126,8 @@ AssignStatement *Parser::parseAssign()
     Final *f;
     f = (Final *)(parseFactor());
 
-    if (!Tok.is(Token::equal))
+    if (!Tok.isOneOf(Token::equal, Token::plus_equal, Token::star_equal
+    , Token::minus_equal, Token::slash_equal, Token::precent_equal))
     {
         error();
         return nullptr;
@@ -159,7 +160,8 @@ AssignStatement *Parser::parseAssign()
     return (new AssignStatement(f, a, e));
 
 _error3:
-    advance();
+    while (Tok.getKind() != Token::eoi)
+        advance();
     return nullptr;
 }
 
@@ -259,10 +261,11 @@ IfStatement *Parser::parseIf()
         return nullptr;
     }
     advance();
+    
+    llvm::SmallVector<AssignStatement *> statement;
 
     while (!Tok.is(Token::end))
     {
-        llvm::SmallVector<AssignStatement *> statement;
 
         if(Tok.is(Token::ident)){
             AssignStatement *a;
@@ -293,7 +296,110 @@ IfStatement *Parser::parseIf()
     } 
     return new IfStatement(conditions, statement, elifs, el);
 _errorif: // TODO: Check this later in case of error :)
-    while (Tok.getKind() != Token::end)
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
+ElifStatement *Parser::parseElif()
+{
+    ElifStatement *Res = nullptr;
+
+    if (!Tok.is(Token::KW_elif))
+    {
+        error();
+        return nullptr;
+    }
+    advance();
+
+    Conditions *conditions = ParseConditions();
+    advance();
+
+    if (!Tok.is(Token::colon))
+    {
+        error();
+        return nullptr;
+    }
+    advance();
+
+    if (!Tok.is(Token::begin))
+    {
+        error();
+        return nullptr;
+    }
+    advance();
+
+    while (!Tok.is(Token::end))
+    {
+        llvm::SmallVector<AssignStatement *> statement;
+
+        if(Tok.is(Token::ident)){
+            AssignStatement *a;
+            a = parseAssign();
+
+            if (!Tok.is(Token::semicolon))
+            {
+                error();
+                goto _errorelif;
+            }
+            if (a)
+                statement.push_back(a);
+        }
+    }
+    Res = new ElifStatement(conditions, statement);
+    return Res;
+_errorelif:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
+}
+
+ElseStatement *Parser::parseElse()
+{
+    ElseStatement *Res = nullptr;
+
+    if (!Tok.is(Token::KW_else))
+    {
+        error();
+        return nullptr;
+    }
+    advance();
+
+    if (!Tok.is(Token::colon))
+    {
+        error();
+        return nullptr;
+    }
+    advance();
+
+    if (!Tok.is(Token::begin))
+    {
+        error();
+        return nullptr;
+    }
+    advance();
+
+    while (!Tok.is(Token::end))
+    {
+        llvm::SmallVector<AssignStatement *> statement;
+
+        if(Tok.is(Token::ident)){
+            AssignStatement *a;
+            a = parseAssign();
+
+            if (!Tok.is(Token::semicolon))
+            {
+                error();
+                goto _errorelif;
+            }
+            if (a)
+                statement.push_back(a);
+        }
+    }
+    Res = new ElseStatement();
+    return Res;
+_errorelif:
+    while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
 }
@@ -328,53 +434,83 @@ LoopStatement *Parser::parseLoop()
 
     while (!Tok.is(Token::end))
     {
-        llvm::SmallVector<Statement *> statement;
-        llvm::SmallVector<ElifStatement *> Elifs;
+        llvm::SmallVector<AssignStatement *> statement;
 
-        switch (Tok.getKind())
-        {
-        case Token::ident:
-            Expr *a;
+        if(Tok.is(Token::ident)){
+            AssignStatement *a;
             a = parseAssign();
 
             if (!Tok.is(Token::semicolon))
             {
                 error();
-                goto _error2;
+                goto _errorloop;
             }
             if (a)
                 statement.push_back(a);
-            else
-                goto _errorif;
-            break;
-        case Token::KW_if:
-            IfStatement *d;
-            d = parseIf();
-            if (d)
-                Elifs.push_back(d);
-            else
-                goto _errorif;
-            break;
-        case Token::KW_loopc:
-            LoopStatement *d;
-            d = parseLoop();
-            if (d)
-                statement.push_back(d);
-            else
-                goto _errorif;
-            break;
-
-        default:
-            goto _errorif;
-            break;
         }
-    Res = new IfStatement(conditions, statement, Elifs);
+    }
+    Res = new LoopStatement(conditions, statement);
     return Res;
-_errorif: // TODO: Check this later in case of error :)
+_errorloop:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
+}
+
+Conditions *Parser::parseConditions()
+{
+    Conditions *Left = parseCondition();
+    while (Tok.isOneOf(Token::KW_and, Token::KW_or))
+    {
+        Conditions::AndOr Op =
+            Tok.is(Token::KW_and) ? Conditions::AndOr::And : Conditions::AndOr::Or;
         advance();
+        Conditions *Right = parseCondition();
+        Left = new Conditions(Op, Left, Right);
     }
-    return Res;
+    return Left;
+}
+
+Condition *Parser::parseCondition()
+{
+    Condition *Left = parseExpr();
+    while (Tok.isOneOf(Token::bigger, Token::bigger_equal, Token::less, Token::less_equal, Token::not_equal, Token::equal_equal))
+    {
+        Condition::Operator Op;
+        switch (Tok.getKind())
+        {
+        case Token::bigger:
+            Op = Condition::Operator::Greater;
+            break;
+        case Token::bigger_equal:
+            Op = Condition::Operator::GreaterEqual;
+            break;
+        case Token::less:
+            Op = Condition::Operator::Less;
+            break;
+        case Token::less_equal:
+            Op = Condition::Operator::LessEqual;
+            break;
+        case Token::equal_equal:
+            Op = Condition::Operator::Equal;
+            break;
+        case Token::not_equal:
+            Op = Condition::Operator::NotEqual;
+            break;
+        
+        default:
+            goto _errorcondition;
+            break;
+        }
+        
+        advance();
+        Expression *Right = parseExpr();
+        Left = new Condition(Op, Left, Right);
+        
+    }
+    return Left;
+_errorcondition:
+    while (Tok.getKind() != Token::eoi)
+        advance();
+    return nullptr;
 }

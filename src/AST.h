@@ -243,14 +243,14 @@ public:
     };
 
 private:
-    Expression *lvalue;
+    Final *lvalue;
     AssOp AssignmentOp;
     Expression *rvalue;
 
 public:
-    AssignStatement(Expression *lvalue, AssOp AssignmentOp, Expression *rvalue) :
+    AssignStatement(Final *lvalue, AssOp AssignmentOp, Expression *rvalue) :
      lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(StateMentType::Assignment) {}
-    Expression *getLValue()
+    Final *getLValue()
     {
         return lvalue;
     }
@@ -364,6 +364,32 @@ public:
     {
         V.visit(*this);
     }
+};
+
+class Final : public Expression
+{
+public:
+  enum ValueKind
+  {
+    Ident,
+    Number
+  };
+
+private:
+  ValueKind Kind;                            
+  llvm::StringRef Val;                       
+
+public:
+  Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
+
+  ValueKind getKind() { return Kind; }
+
+  llvm::StringRef getVal() { return Val; }
+
+  virtual void accept(ASTVisitor &V) override
+  {
+    V.visit(*this);
+  }
 };
 
 #endif

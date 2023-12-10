@@ -7,7 +7,7 @@
 using namespace llvm;
 
 // Define a visitor class for generating LLVM IR from the AST.
-namespace 
+namespace
 {
   class ToIRVisitor : public ASTVisitor
   {
@@ -53,7 +53,7 @@ namespace
     }
 
     // Visit function for the GSM node in the AST.
-    virtual void visit(GSM &Node) override
+    virtual void visit(Root &Node) override
     {
       // Iterate over the children of the GSM node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
@@ -62,31 +62,34 @@ namespace
       }
     };
 
-    virtual void visit(Assignment &Node) override
+    virtual void visit(Statement &Node) override
     {
-      // Visit the right-hand side of the assignment and get its value.
-      Node.getRight()->accept(*this);
-      Value *val = V;
+      if (Node.getKind()==Statement::StatementType::Assignment)
+      {
+        AssignStatement* assignStatement=(AssignStatement*)&Node;
+        assignStatement->accept(*this);
+      }
+      else if (Node.getKind==Statement::StatementType::If)
+      {
+        IfStatement* ifStatement=(IfStatement*)&Node;
+        ifStatement->accept(*this);
+      }
+      else if(Node.getKind==Statement::StatementType::Loop)
+      {
+        LoopStatement* loopStatement=(LoopStatement*)&Node;
+        loopStatement->accept(*this);
+      }
+      else 
+      {
+        DecStatement* dec = (DecStatement*)&Node;
+        dec->accept(*this);
 
-      // Get the name of the variable being assigned.
-      auto varName = Node.getLeft()->getVal();
-
-      // Create a store instruction to assign the value to the variable.
-      Builder.CreateStore(val, nameMap[varName]);
-
-      // Create a function type for the "gsm_write" function.
-      FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
-
-      // Create a function declaration for the "gsm_write" function.
-      Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
-
-      // Create a call instruction to invoke the "gsm_write" function with the value.
-      CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
+      }
     };
 
-    virtual void visit(Factor &Node) override
+    virtual void visit(Final &Node) override
     {
-      if (Node.getKind() == Factor::Ident)
+      if (Node.getKind() == Final::Ident)
       {
         // If the factor is an identifier, load its value from memory.
         V = Builder.CreateLoad(Int32Ty, nameMap[Node.getVal()]);
@@ -94,8 +97,7 @@ namespace
       else
       {
         // If the factor is a literal, convert it to an integer and create a constant.
-        int intval;
-        Node.getVal().getAsInteger(10, intval);
+        int intval = Node.getVal();
         V = ConstantInt::get(Int32Ty, intval, true);
       }
     };
@@ -125,11 +127,11 @@ namespace
       case BinaryOp::Div:
         V = Builder.CreateSDiv(Left, Right);
         break;
-      }
       case BinaryOp::Mod:
         Value *division = Builder.CreateSDiv(Left, Right);
         Value *multiplication = Builder.CreateNSWMul(division, Right);
         V = Builder.CreateNSWSub(Left, multiplication);
+      }
     };
 
     virtual void visit(Declaration &Node) override

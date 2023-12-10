@@ -1,6 +1,5 @@
 #include "Parser.h"
 
-// main point is that the whole input has been consumed
 AST *Parser::parse()
 {
     AST *Res = parseMSM();
@@ -10,6 +9,7 @@ AST *Parser::parse()
 MSM *Parser::parseMSM()
 {
     llvm::SmallVector<Statement *> statement;
+    bool flag = false;
     while (!Tok.is(Token::eoi))
     {
         switch (Tok.getKind())
@@ -19,8 +19,11 @@ MSM *Parser::parseMSM()
             d = parseDec();
             if (d)
                 statement.push_back(d);
-            else
-                goto _error2;
+            else{
+                error();
+                flag = true;
+                break;
+            }
             break;
         case Token::ident:
             AssignStatement *a;
@@ -29,40 +32,53 @@ MSM *Parser::parseMSM()
             if (!Tok.is(Token::semicolon))
             {
                 error();
-                goto _error2;
+                flag = true;
+                break;
             }
             if (a)
                 statement.push_back(a);
-            else
-                goto _error2;
+            else{
+                error();
+                flag = true;
+                break;
+            }
             break;
         case Token::KW_if:
-            IfStatement *d;
-            d = parseIf();
-            if (d)
-                statement.push_back(d);
-            else
-                goto _error2;
+            IfStatement *i;
+            i = parseIf();
+            if (i)
+                statement.push_back(i);
+            else{
+                flag = true;
+                break;
+                break;
+            }
             break;
         case Token::KW_loopc:
-            LoopStatement *d;
-            d = parseLoop();
-            if (d)
-                statement.push_back(d);
-            else
-                goto _error2;
+            LoopStatement *l;
+            l = parseLoop();
+            if (l)
+                statement.push_back(l);
+            
+            else{
+                error();
+                flag = true;
+                break;
+            }
             break;
         default:
-            goto _error2;
-            break;
+            error();
+            flag = true;
+            break; 
         }
         advance();
     }
-    return new MSM(statement);
-_error2:
-    while (Tok.getKind() != Token::eoi)
+    if(flag){
+        while (Tok.getKind() != Token::eoi)
         advance();
-    return nullptr;
+        return nullptr;
+    }
+    return new MSM(statement);
 }
 
 DecStatement *Parser::parseDec()
@@ -78,7 +94,7 @@ DecStatement *Parser::parseDec()
 
     if (expect(Token::ident))
         goto _error;
-    Vars.push_back(Tok.getText());
+    vars.push_back(Tok.getText());
     advance();
 
     while (Tok.is(Token::comma))
@@ -86,7 +102,7 @@ DecStatement *Parser::parseDec()
         advance();
         if (expect(Token::ident))
             goto _error;
-        Vars.push_back(Tok.getText());
+        vars.push_back(Tok.getText());
         advance();
     }
 
@@ -95,17 +111,17 @@ DecStatement *Parser::parseDec()
         advance();
         e = parseExpr();
         if(e)
-            exprs.push_back(E);
+            exprs.push_back(e);
         else
-            goto _error
+            goto _error;
         while (Tok.is(Token::comma))
         {
             advance();
             e = parseExpr();
             if(e)
-                exprs.push_back(E);
+                exprs.push_back(e);
             else
-                goto _error
+                goto _error;
             advance();
         }
     }
@@ -114,7 +130,7 @@ DecStatement *Parser::parseDec()
         goto _error;
 
     return new DecStatement(vars, exprs);
-_error: // TODO: Check this later in case of error :)
+_error:
     while (Tok.getKind() != Token::eoi)
         advance();
     return nullptr;
@@ -200,7 +216,7 @@ Expression *Parser::parseFactor()
     Expression *Left = parseFinal();
     while (Tok.is(Token::power))
     {
-        Expression::Operator Op = Expression::Power;
+        Expression::Operator Op = Expression::Operator::Pow;
         advance();
         Expression *Right = parseFinal();
         Left = new Expression(Op, Left, Right);
@@ -247,7 +263,7 @@ IfStatement *Parser::parseIf()
     }
     advance();
 
-    Conditions *conditions = ParseConditions();
+    Conditions *conditions = parseConditions();
     advance();
 
     if (!Tok.is(Token::colon))
@@ -265,7 +281,7 @@ IfStatement *Parser::parseIf()
     advance();
     
     llvm::SmallVector<AssignStatement *> statement;
-
+    bool flag = false;
     while (!Tok.is(Token::end))
     {
 
@@ -276,31 +292,36 @@ IfStatement *Parser::parseIf()
             if (!Tok.is(Token::semicolon))
             {
                 error();
-                goto _error2;
+                flag = true;
+                break;
             }
             if (a)
                 statement.push_back(a);
         }
     }
     advance();
-    while(Tok.is(Token::KW_elif)){
+    while(Tok.is(Token::KW_elif) && !flag){
         ElifStatement *e;
         e = parseElif();
         if(e)
-            Elifs.push_back(e);
-        else
-            goto _errorif;
+            elifs.push_back(e);
+        else {
+            error();
+            flag = true;
+            break;
+        }
+    }
+    if(flag){
+        while (Tok.getKind() != Token::eoi)
+            advance();
+        return nullptr;
     }
     advance();
+    ElseStatement *el = nullptr;
     if(Tok.is(Token::KW_else)){
-        ElseStatement *el;
         el = parseElse();
     } 
     return new IfStatement(conditions, statement, elifs, el);
-_errorif: // TODO: Check this later in case of error :)
-    while (Tok.getKind() != Token::eoi)
-        advance();
-    return nullptr;
 }
 
 ElifStatement *Parser::parseElif()
@@ -314,7 +335,7 @@ ElifStatement *Parser::parseElif()
     }
     advance();
 
-    Conditions *conditions = ParseConditions();
+    Conditions *conditions = parseConditions();
     advance();
 
     if (!Tok.is(Token::colon))
@@ -330,10 +351,10 @@ ElifStatement *Parser::parseElif()
         return nullptr;
     }
     advance();
+    llvm::SmallVector<AssignStatement *> statement;
 
     while (!Tok.is(Token::end))
     {
-        llvm::SmallVector<AssignStatement *> statement;
 
         if(Tok.is(Token::ident)){
             AssignStatement *a;
@@ -380,10 +401,11 @@ ElseStatement *Parser::parseElse()
         return nullptr;
     }
     advance();
+    llvm::SmallVector<AssignStatement *> statement;
+    int flag = 0;
 
     while (!Tok.is(Token::end))
     {
-        llvm::SmallVector<AssignStatement *> statement;
 
         if(Tok.is(Token::ident)){
             AssignStatement *a;
@@ -392,14 +414,16 @@ ElseStatement *Parser::parseElse()
             if (!Tok.is(Token::semicolon))
             {
                 error();
-                goto _errorelif;
+                flag = 1;
+                break;
             }
             if (a)
                 statement.push_back(a);
         }
     }
-    Res = new ElseStatement();
-    return Res;
+    if(flag)
+        goto _errorelif;
+    return new ElseStatement(statement);
 _errorelif:
     while (Tok.getKind() != Token::eoi)
         advance();
@@ -417,7 +441,7 @@ LoopStatement *Parser::parseLoop()
     }
     advance();
 
-    Conditions *conditions = ParseConditions();
+    Conditions *conditions = parseConditions();
     advance();
 
     if (!Tok.is(Token::colon))
@@ -433,10 +457,10 @@ LoopStatement *Parser::parseLoop()
         return nullptr;
     }
     advance();
+    llvm::SmallVector<AssignStatement *> statement;
 
     while (!Tok.is(Token::end))
     {
-        llvm::SmallVector<AssignStatement *> statement;
 
         if(Tok.is(Token::ident)){
             AssignStatement *a;
@@ -468,51 +492,46 @@ Conditions *Parser::parseConditions()
             Tok.is(Token::KW_and) ? Conditions::AndOr::And : Conditions::AndOr::Or;
         advance();
         Conditions *Right = parseCondition();
-        Left = new Conditions(Op, Left, Right);
+        Left = new Conditions(Left, Op, Right);
     }
     return Left;
 }
 
 Condition *Parser::parseCondition()
 {
-    Condition *Left = parseExpr();
-    while (Tok.isOneOf(Token::bigger, Token::bigger_equal, Token::less, Token::less_equal, Token::not_equal, Token::equal_equal))
+    Expression *Left = parseExpr();
+    
+    Condition::Operator Op;
+    switch (Tok.getKind())
     {
-        Condition::Operator Op;
-        switch (Tok.getKind())
-        {
-        case Token::bigger:
-            Op = Condition::Operator::Greater;
-            break;
-        case Token::bigger_equal:
-            Op = Condition::Operator::GreaterEqual;
-            break;
-        case Token::less:
-            Op = Condition::Operator::Less;
-            break;
-        case Token::less_equal:
-            Op = Condition::Operator::LessEqual;
-            break;
-        case Token::equal_equal:
-            Op = Condition::Operator::Equal;
-            break;
-        case Token::not_equal:
-            Op = Condition::Operator::NotEqual;
-            break;
-        
-        default:
-            goto _errorcondition;
-            break;
-        }
-        
-        advance();
-        Expression *Right = parseExpr();
-        Left = new Condition(Op, Left, Right);
-        
+    case Token::bigger:
+        Op = Condition::Operator::Greater;
+        break;
+    case Token::bigger_equal:
+        Op = Condition::Operator::GreaterEqual;
+        break;
+    case Token::less:
+        Op = Condition::Operator::Less;
+        break;
+    case Token::less_equal:
+        Op = Condition::Operator::LessEqual;
+        break;
+    case Token::equal_equal:
+        Op = Condition::Operator::Equal;
+        break;
+    case Token::not_equal:
+        Op = Condition::Operator::NotEqual;
+        break;
+    
+    default:  
+        while (Tok.getKind() != Token::eoi)
+            advance();
+        return nullptr;
+        break;
     }
-    return Left;
-_errorcondition:
-    while (Tok.getKind() != Token::eoi)
-        advance();
-    return nullptr;
+    
+    advance();
+    Expression *Right = parseExpr();
+        
+    return new Condition(Left, Op, Right);
 }

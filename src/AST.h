@@ -51,7 +51,7 @@ private:
     llvm::SmallVector<Statement *> statements; // Stores the list of expressions
 
 public:
-    Base(llvm::SmallVector<Statement *> Statements) : statements(Statements) {}
+    MSM(llvm::SmallVector<Statement *> Statements) : statements(Statements) {}
     llvm::SmallVector<Statement *> getStatements() { return statements; }
 
     llvm::SmallVector<Statement *>::const_iterator begin() { return statements.begin(); }
@@ -96,20 +96,21 @@ class IfStatement : public Statement
 
 private:
     Conditions *condition;
-    llvm::SmallVector<Assignment *> Assignments;
+    llvm::SmallVector<AssignStatement *> Assignments;
     llvm::SmallVector<ElifStatement *> Elifs;
     ElseStatement *Else;
 
 public:
-    IfStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments,llvm::SmallVector<ElifStatement *> Elifs,ElseStatement *Else) : 
+    IfStatement(Conditions *condition, llvm::SmallVector<AssignStatement *> Assignments,llvm::SmallVector<ElifStatement *> Elifs,ElseStatement *Else) : 
     condition(condition), Assignments(Assignments), Statement(Statement::StatementType::If), Elifs(Elifs), Else(Else) {}
+    IfStatement(): Statement(Statement::StatementType::If) {}
 
     Conditions *getCondition()
     {
         return condition;
     }
 
-    llvm::SmallVector<Statement *> getAssignments()
+    llvm::SmallVector<AssignStatement *> getAssignments()
     {
         return Assignments;
     }
@@ -135,18 +136,18 @@ class ElifStatement : public IfStatement
     
 private:
     Conditions *condition;
-    llvm::SmallVector<Assignment *> Assignments;
+    llvm::SmallVector<AssignStatement *> Assignments;
 
 public:
-    ElifStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments) :
-     condition(condition), Assignments(Assignments) {}
+    ElifStatement(Conditions *condition, llvm::SmallVector<AssignStatement *> Assignments) :
+     condition(condition), Assignments(Assignments), IfStatement() {}
 
     Conditions *getCondition()
     {
         return condition;
     }
 
-    llvm::SmallVector<Statement *> getStatements()
+    llvm::SmallVector<AssignStatement *> getStatements()
     {
         return Assignments;
     }
@@ -161,15 +162,15 @@ class ElseStatement : public IfStatement
 {
 
 private:
-    llvm::SmallVector<Assignment *> Assignments;
+    llvm::SmallVector<AssignStatement *> Assignments;
 
 public:
-    ElseStatement(llvm::SmallVector<Assignment *> Assignments) : 
-    Assignments(Assignments) {}
+    ElseStatement(llvm::SmallVector<AssignStatement *> Assignments) : 
+    Assignments(Assignments), IfStatement() {}
 
-    llvm::SmallVector<Assignment *> getAssignments()
+    llvm::SmallVector<AssignStatement *> getAssignments()
     {
-        return Assignment;
+        return Assignments;
     }
 
     virtual void accept(ASTVisitor &V) override
@@ -183,18 +184,18 @@ class LoopStatement : public Statement
 
 private:
     Conditions *condition;
-    llvm::SmallVector<Assignment *> Assignments;
+    llvm::SmallVector<AssignStatement *> Assignments;
 
 public:
-    LoopStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments) : 
-    Condition(condition), Assignments(Assignments), Statement(Statement::StatementType::If) {}
+    LoopStatement(Conditions *condition, llvm::SmallVector<AssignStatement *> Assignments) : 
+    condition(condition), Assignments(Assignments), Statement(Statement::StatementType::If) {}
 
     Conditions *getCondition()
     {
         return condition;
     }
 
-    llvm::SmallVector<Assignment *> getAssignments()
+    llvm::SmallVector<AssignStatement *> getAssignments()
     {
         return Assignments;
     }
@@ -208,22 +209,21 @@ public:
 class DecStatement : public Statement
 {
 private:
-    using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
-    VarVector Vars;
-    using ExprVector = llvm::SmallVector<Expression *>;
-    ExprVector Exprs;
+    llvm::SmallVector<llvm::StringRef, 8> vars;
+    llvm::SmallVector<Expression *> exprs;
 
 public:
-    DecStatement(VarVector *Vars, ExprVector *Exprs) :
-        Vars(Vars), Exprs(Exprs), Statement(StatementType::Declaration) {}
-    VarVector *getVars()
+    DecStatement(llvm::SmallVector<llvm::StringRef, 8> vars, llvm::SmallVector<Expression *> exprs) :
+        vars(vars), exprs(exprs), Statement(Statement::StatementType::Declaration) {}
+
+    llvm::SmallVector<llvm::StringRef, 8> getVars()
     {
-        return Vars;
+        return vars;
     }
 
-    ExprVector *getExprs()
+    llvm::SmallVector<Expression *> getExprs()
     {
-        return Exprs;
+        return exprs;
     }
 
     virtual void accept(ASTVisitor &V) override
@@ -263,9 +263,9 @@ public:
         return rvalue;
     }
 
-    AssOP *getAssignmentOP()
+    AssOp getAssignmentOP()
     {
-        return rvalue;
+        return AssignmentOp;
     }
 
     virtual void accept(ASTVisitor &V) override
@@ -293,7 +293,9 @@ private:
     Operator Op;      // Operator of the binary operation
 
 public:
-    Expression(Operator Op, Expression *L, Expression *R) : Op(Op), Left(L), Right(R), Expression(ExpressionType::ExpressionType) {}
+    Expression(Operator Op, Expression *L, Expression *R) : 
+    Op(Op), Left(L), Right(R) {}
+    Expression() {}
 
     Expression *getLeft() { return Left; }
 
@@ -317,15 +319,17 @@ public:
     };
 private:
     Conditions *Left;
-    AndOr *Sign;
+    AndOr Sign;
     Conditions *Right;
 
 public:
-    Conditions(Conditions *left, AndOr *sign, Conditions *right) : Left(left), Sign(sign), Right(right) {}
+    Conditions(Conditions *left, AndOr sign, Conditions *right) : 
+    Left(left), Sign(sign), Right(right) {}
+    Conditions() {}
 
     Conditions *getLeft() { return Left; }
 
-    AndOr *getSign() { return Sign; }
+    AndOr getSign() { return Sign; }
 
     Conditions *getRight() { return Right; }
 
@@ -354,11 +358,12 @@ private:
     Operator Op;      // Operator of the boolean operation
 
 public:
-    Condition(Expression *left, Operator Op, Expression *right) : Left(left), Op(Op), Right(right) {}
+    Condition(Expression *left, Operator Op, Expression *right) : 
+    Left(left), Op(Op), Right(right), Conditions() {}
 
     Expression *getLeft() { return Left; }
 
-    Operator getSign() { return Sign; }
+    Operator getSign() { return Op; }
 
     Expression *getRight() { return Right; }
 
@@ -382,7 +387,7 @@ private:
   llvm::StringRef Val;                       
 
 public:
-  Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
+  Final(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val), Expression() {}
 
   ValueKind getKind() { return Kind; }
 

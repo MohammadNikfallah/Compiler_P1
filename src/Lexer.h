@@ -44,7 +44,6 @@ public:
         KW_if,
         KW_elif,
         KW_else,
-        KW_else,
         KW_loopc,
         KW_and,
         KW_or,

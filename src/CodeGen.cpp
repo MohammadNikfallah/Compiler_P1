@@ -165,7 +165,11 @@ namespace
         }
     virtual void visit(DecStatement &Node) override
     {
-      Value *val = nullptr;
+      llvm::SmallVector<llvm::StringRef, 8> vars=Node.getVars()
+      llvm::SmallVector<Expression *> Exprs=Node.getExprs()
+
+
+
 
       if (Node.getExpr())
       {
@@ -175,7 +179,7 @@ namespace
       }
 
       // Iterate over the variables declared in the declaration statement.
-      for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
+      for (auto var_start = vars.begin(), var_end = vars.end(),; I != E; ++I)
       {
         StringRef Var = *I;
 

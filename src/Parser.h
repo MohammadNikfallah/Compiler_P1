@@ -40,12 +40,19 @@ class Parser
         return false;
     }
 
-    AST *parseGSM();
-    Expr *parseDec();
-    Expr *parseAssign();
-    Expr *parseExpr();
-    Expr *parseTerm();
-    Expr *parseFactor();
+    MSM *parseMSM();
+    DecStatement *parseDec();
+    AssignStatement *parseAssign();
+    Expression *parseExpr();
+    Expression *parseTerm();
+    Expression *parseFactor();
+    Expression *parseFinal();
+    IfStatement *parseIf();
+    ElifStatement *parseElif();
+    ElseStatement *parseElse();
+    LoopStatement *parseLoop();
+    Conditions *parseConditions();
+    Condition *parseCondition();
 
 public:
     // initializes all members and retrieves the first token

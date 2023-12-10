@@ -45,23 +45,23 @@ void Lexer::next(Token &token)
         if (Name == "int")
             kind = Token::KW_int;
         else if (Name=="if")
-            kind=Token::KW_if
+            kind=Token::KW_if;
         else if (Name=="else")
-            kind=Token::KW_else
+            kind=Token::KW_else;
         else if (Name=="elif")
-            kind=Token::KW_elif
+            kind=Token::KW_elif;
         else if (Name=="and")
-            kind=Token::KW_and
+            kind=Token::KW_and;
         else if (Name=="or")
-            kind=Token::KW_or
+            kind=Token::KW_or;
         else if (Name=="true")
-            kind=Token::KW_true
+            kind=Token::KW_true;
         else if (Name=="false")
-            kind=Token::KW_false
+            kind=Token::KW_false;
         else if (Name=="end")
-            kind=Token::end
+            kind=Token::end;
         else if (Name=="begin")
-            kind=Token::begin
+            kind=Token::begin;
         else
             kind = Token::ident;
         // generate the token
@@ -96,7 +96,7 @@ void Lexer::next(Token &token)
         else if (now=='!' && next=='=')
             formToken(token, BufferPtr + 2, Token::not_equal);
         else if (now=='>' && next=='=')
-            formToken(token, BufferPtr + 2, Token::biger_equal);
+            formToken(token, BufferPtr + 2, Token::bigger_equal);
         else if (now=='<' && next=='=')
             formToken(token, BufferPtr + 2, Token::less_equal);
         
@@ -112,14 +112,14 @@ void Lexer::next(Token &token)
             CASE('*', Token::star);
             CASE('/', Token::slash);
             CASE('%', Token::percent);
-            CASE('^',Token::power)
+            CASE('^',Token::power);
             CASE('(', Token::l_paren);
             CASE(')', Token::r_paren);
             CASE(';', Token::semicolon);
-            CASE(',', Token::Token::comma);
+            CASE(',', Token::comma);
             CASE('=', Token::equal);
-            CASE('>', Token::biger)
-            CASE('<',Token::less)
+            CASE('>', Token::bigger);
+            CASE('<',Token::less);
 #undef CASE
         default:
             formToken(token, BufferPtr + 1, Token::unknown);

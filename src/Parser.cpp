@@ -7,7 +7,7 @@ AST *Parser::parse()
     return Res;
 }
 
-AST *Parser::parseMSM()
+MSM *Parser::parseMSM()
 {
     llvm::SmallVector<Statement *> statement;
     while (!Tok.is(Token::eoi))
@@ -56,9 +56,9 @@ AST *Parser::parseMSM()
             goto _error2;
             break;
         }
-        advance(); // TODO: watch this part
+        advance();
     }
-    return new GSM(statement);
+    return new MSM(statement);
 _error2:
     while (Tok.getKind() != Token::eoi)
         advance();
@@ -125,6 +125,8 @@ AssignStatement *Parser::parseAssign()
     Expression *e;
     Final *f;
     f = (Final *)(parseFactor());
+
+    advance();
 
     if (!Tok.isOneOf(Token::equal, Token::plus_equal, Token::star_equal
     , Token::minus_equal, Token::slash_equal, Token::precent_equal))
@@ -212,11 +214,11 @@ Expression *Parser::parseFinal()
     switch (Tok.getKind())
     {
     case Token::number:
-        Res = new Factor(Final::ValueKind::Number, Tok.getText());
+        Res = new Final(Final::ValueKind::Number, Tok.getText());
         advance();
         break;
     case Token::ident:
-        Res = new Factor(Final::ValueKind::Ident, Tok.getText());
+        Res = new Final(Final::ValueKind::Ident, Tok.getText());
         advance();
         break;
     case Token::l_paren:
@@ -224,10 +226,10 @@ Expression *Parser::parseFinal()
         Res = parseExpr();
         if (!consume(Token::r_paren))
             break;
-    default: // error handling
+    default:
         if (!Res)
             error();
-        while (!Tok.isOneOf(Token::r_paren, Token::star, Token::plus, Token::minus, Token::slash, Token::eoi))
+        while (!Tok.isOneOf(Token::r_paren, Token::star, Token::plus, Token::minus, Token::slash, Token::eoi))// what the fuck is this
             advance();
         break;
     }

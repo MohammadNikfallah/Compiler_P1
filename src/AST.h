@@ -213,14 +213,14 @@ private:
 public:
     DecStatement(VarVector *Vars, ExprVector *Exprs) :
      Vars(Vars), Exprs(Exprs), Statement(StateMentType::Declaration) {}
-    Expression *getVars()
+    VarVector *getVars()
     {
-        return lvalue;
+        return Vars;
     }
 
-    Expression *getExprs()
+    ExprVector *getExprs()
     {
-        return rvalue;
+        return Exprs;
     }
 
     virtual void accept(ASTVisitor &V) override

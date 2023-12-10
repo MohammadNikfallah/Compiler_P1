@@ -6,7 +6,7 @@
 #include "llvm/Support/raw_ostream.h"
 
 class AST; // Abstract Syntax Tree
-class Root; // Top-level program
+class Base; // Top-level program
 class Statement; // Top-level statement
 class Expression; // Binary operation of numbers and identifiers
 class AssignStatement; // Assignment statement like a = 3;
@@ -23,7 +23,7 @@ public:
     // Virtual visit functions for each AST node type
     virtual void visit(AST &) {}
     virtual void visit(Expression &) {}
-    virtual void visit(Root &) = 0;
+    virtual void visit(Base &) = 0;
     virtual void visit(Statement &) = 0;
     virtual void visit(DecStatement &) = 0;
     virtual void visit(AssignStatement &) = 0;
@@ -41,14 +41,14 @@ public:
     virtual void accept(ASTVisitor &V) = 0;
 };
 
-
-class Root : public AST
+// Base Node that contains all the syntax nodes
+class Base : public AST
 {
 private:
     llvm::SmallVector<Statement *> statements; // Stores the list of expressions
 
 public:
-    Root(llvm::SmallVector<Statement *> Statements) : statements(Statements) {}
+    Base(llvm::SmallVector<Statement *> Statements) : statements(Statements) {}
     llvm::SmallVector<Statement *> getStatements() { return statements; }
 
     llvm::SmallVector<Statement *>::const_iterator begin() { return statements.begin(); }
@@ -63,7 +63,7 @@ public:
 class Statement : public AST
 {
 public:
-    enum StatementType
+    enum StateMentType
     {
         Declaration,
         Assignment,
@@ -72,16 +72,16 @@ public:
     };
 
 private:
-    StatementType Type;
+    StateMentType Type;
 
 public:
-    StatementType getKind()
+    StateMentType getKind()
     {
         return Type;
     }
 
 
-    Statement(StatementType type) : Type(type) {}
+    Statement(StateMentType type) : Type(type) {}
     virtual void accept(ASTVisitor &V) override
     {
         V.visit(*this);
@@ -98,7 +98,7 @@ private:
     ElseStatement *Else;
 
 public:
-    IfStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments,llvm::SmallVector<ElifStatement *> Elifs,ElseStatement *Else, StatementType type) : 
+    IfStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments,llvm::SmallVector<ElifStatement *> Elifs,ElseStatement *Else, StateMentType type) : 
     condition(condition), Assignments(Assignments), Statement(type),Elifs(Elifs) Else(Else) {}
 
     Conditions *getCondition()
@@ -135,7 +135,7 @@ private:
     llvm::SmallVector<Assignment *> Assignments;
 
 public:
-    ElifStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StatementType type) :
+    ElifStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StateMentType type) :
      condition(condition), Assignments(Assignments), Statement(type) {}
 
     Conditions *getCondition()
@@ -161,7 +161,7 @@ private:
     llvm::SmallVector<Assignment *> Assignments;
 
 public:
-    ElseStatement(llvm::SmallVector<Assignment *> Assignments, StatementType type) : 
+    ElseStatement(llvm::SmallVector<Assignment *> Assignments, StateMentType type) : 
     Assignments(Assignments), Statement(type) {}
 
     llvm::SmallVector<Assignment *> getAssignments()
@@ -183,7 +183,7 @@ private:
     llvm::SmallVector<Assignment *> Assignments;
 
 public:
-    LoopStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StatementType type) : 
+    LoopStatement(Conditions *condition, llvm::SmallVector<Assignment *> Assignments, StateMentType type) : 
     Condition(condition), Assignments(Assignments), Statement(type) {}
 
     Conditions *getCondition()
@@ -212,7 +212,7 @@ private:
 
 public:
     DecStatement(VarVector *Vars, ExprVector *Exprs) :
-     Vars(Vars), Exprs(Exprs), Statement(StatementType::Declaration) {}
+     Vars(Vars), Exprs(Exprs), Statement(StateMentType::Declaration) {}
     Expression *getVars()
     {
         return lvalue;
@@ -249,7 +249,7 @@ private:
 
 public:
     AssignStatement(Final *lvalue, AssOp AssignmentOp, Expression *rvalue) :
-     lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(StatementType::Assignment) {}
+     lvalue(lvalue), AssignmentOp(AssignmentOp), rvalue(rvalue), Statement(StateMentType::Assignment) {}
     Final *getLValue()
     {
         return lvalue;
@@ -314,18 +314,18 @@ public:
         Or
     };
 private:
-    Condition *Left;
+    Conditions *Left;
     AndOr *Sign;
-    Condition *Right;
+    Conditions *Right;
 
 public:
-    Conditions(Condition *left, AndOr *sign, Condition *right) : Left(left), Sign(sign), Right(right) {}
+    Conditions(Conditions *left, AndOr *sign, Conditions *right) : Left(left), Sign(sign), Right(right) {}
 
-    Condition *getLeft() { return Left; }
+    Conditions *getLeft() { return Left; }
 
     AndOr *getSign() { return Sign; }
 
-    Condition *getRight() { return Right; }
+    Conditions *getRight() { return Right; }
 
     virtual void accept(ASTVisitor &V) override
     {
@@ -380,7 +380,7 @@ private:
   llvm::StringRef Val;                       
 
 public:
-  Final(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
+  Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
 
   ValueKind getKind() { return Kind; }
 

@@ -87,9 +87,9 @@ namespace
       }
     };
 
-    virtual void visit(Factor &Node) override
+    virtual void visit(Final &Node) override
     {
-      if (Node.getKind() == Factor::Ident)
+      if (Node.getKind() == Final::Ident)
       {
         // If the factor is an identifier, load its value from memory.
         V = Builder.CreateLoad(Int32Ty, nameMap[Node.getVal()]);
@@ -97,8 +97,7 @@ namespace
       else
       {
         // If the factor is a literal, convert it to an integer and create a constant.
-        int intval;
-        Node.getVal().getAsInteger(10, intval);
+        int intval = Node.getVal();
         V = ConstantInt::get(Int32Ty, intval, true);
       }
     };

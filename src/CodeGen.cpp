@@ -97,8 +97,10 @@ namespace
       else
       {
         // If the factor is a literal, convert it to an integer and create a constant.
-        int intval = Node.getVal();
-        V = ConstantInt::get(Int32Ty, intval, true);
+        int number;
+        llvm::StringRe strVal = Node.getVal(); 
+        strVal.getAsInteger(10,number)
+        V = ConstantInt::get(Int32Ty, number, true);
       }
     };
 
@@ -127,14 +129,41 @@ namespace
       case BinaryOp::Div:
         V = Builder.CreateSDiv(Left, Right);
         break;
-      case BinaryOp::Mod:
-        Value *division = Builder.CreateSDiv(Left, Right);
-        Value *multiplication = Builder.CreateNSWMul(division, Right);
-        V = Builder.CreateNSWSub(Left, multiplication);
       }
     };
-
-    virtual void visit(Declaration &Node) override
+    virtual void visit(Condition& Node) override
+        {
+            Node.getLeft()->accept(*this);
+            Value* Left = V;
+            Node.getRight()->accept(*this);
+            Value* Right = V;
+            switch (Node.getOperator())
+            {
+            case Condition::Operator::Equal:
+                V = Builder.CreateICmpEQ(Left, Right);
+                break;
+            case Condition::Operator::Less:
+                V = Builder.CreateICmpSLT(Left, Right);
+                break;
+            case Condition::Operator::LessEqual:
+                V = Builder.CreateICmpSLE(Left, Right);
+                break;
+            case Condition::Operator::GreaterEqual:
+                V = Builder.CreateICmpSGE(Left, Right);
+                break;
+            case Condition::Operator::And:
+                V = Builder.CreateAnd(Left, Right);
+                break;
+            case Condition::Operator::Or:
+                V = Builder.CreateOr(Left, Right);
+                break;
+            case Condition::Operator::Greater:
+                V = Builder.CreateICmpSGT(Left, Right);
+                break;
+            
+            }
+        }
+    virtual void visit(DecStatement &Node) override
     {
       Value *val = nullptr;
 

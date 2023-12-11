@@ -188,7 +188,7 @@ namespace
           V = Builder.CreateICmpSGT(Left, Right);
           break;
       case Condition::Operator::NotEqual:
-          V = Builder.CreateICMpNE(Left, Right);
+          V = Builder.CreateICmpNE(Left, Right);
       }
     }
     virtual void visit(DecStatement &Node) override
@@ -321,7 +321,7 @@ namespace
           V = Builder.CreateAnd(Left, Right);
           break;
       case Conditions::AndOr::Or:
-          V = Builder.CreateAnd(Left, Right);
+          V = Builder.CreateOr(Left, Right);
           break;
       }
     }

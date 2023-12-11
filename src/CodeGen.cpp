@@ -19,6 +19,7 @@ namespace
     Type *Int8PtrTy;
     Type *Int8PtrPtrTy;
     Constant *Int32Zero;
+    Constant *Int32One;
     
 
     Value *V;
@@ -37,6 +38,7 @@ namespace
       Int8PtrTy = Type::getInt8PtrTy(M->getContext());
       Int8PtrPtrTy = Int8PtrTy->getPointerTo();
       Int32Zero = ConstantInt::get(Int32Ty, 0, true);
+      Int32One = ConstantInt::get(Int32Ty, 1, true);
     }
 
     // Entry point for generating LLVM IR from the AST.
@@ -91,6 +93,8 @@ namespace
 
       }
     };
+    
+
 
     virtual void visit(Final &Node) override
     {
@@ -146,22 +150,46 @@ namespace
       
       case Expression::Operator::Pow:
       {
-        Final * ff = (Final *) Right;
-        int RightVal;
-        RightVal = ff->getVal().getAsInteger(10, RightVal);
-        if (RightVal == 0) {
+        int RightValue=0;
+        Final * ff = (Final *) Node.getRight();
+        ff->getVal().getAsInteger(10,RightValue);
+        
+        
+        
+
+
+        
+        Value* LeftVal= Left;
+        llvm::errs()<<RightValue<<"mahan\n";
+        
+
+        
+
+        if (RightValue == 0) {
           V = ConstantInt::get(Int32Ty, 1, true);
           break;
         }
         else {
-          for (int i = 1; i < RightVal; i++)
+          for (int i = 1; i < RightValue; i++)
           {
-           Left = Builder.CreateNSWMul(Left, Left);
+           Left = Builder.CreateNSWMul(Left, LeftVal);
           }
           V = Left;  
           break;
         }
+        
+      // llvm::BasicBlock* powBB = llvm::BasicBlock::Create(M->getContext(), "pow", MainFn);
+      // llvm::BasicBlock* afterPowBB = llvm::BasicBlock::Create(M->getContext(), "pow.after", MainFn);
+      // Value* V = ConstantInt::get(Int32Ty, 1, true);
+      // Value* b = ConstantInt::get(Int32Ty, 0, true);
+      // Builder.CreateBr(powBB);
+      // Builder.SetInsertPoint(powBB);
+      // V = Builder.CreateNSWMul(V, Left);
+      // b = Builder.CreateNSWAdd(b, Int32One);
+      // Builder.CreateCondBr(Builder.CreateICmpSLT(b, Right), powBB, afterPowBB);
+      // Builder.SetInsertPoint(afterPowBB);
       }
+
       }
     };
     virtual void visit(Condition& Node) override
@@ -242,7 +270,6 @@ namespace
       Node.getCondition()->accept(*this);
       llvm::Value* IfCondVal = V;
       // Builder.CreateCondBr(IfCondVal, IfBodyBB, nullptr);
-      llvm::errs() << "hhh\n";
 
       Builder.SetInsertPoint(IfBodyBB);
             llvm::errs() << "hhh\n";
@@ -265,7 +292,7 @@ namespace
         llvm::BasicBlock* ElifBodyBB = llvm::BasicBlock::Create(M->getContext(), "elif.body", MainFn);
 
         Builder.SetInsertPoint(PrevCondBB);
-        Builder.CreateCondBr(PrevCondVal, ElifBodyBB, ElifCondBB);
+        Builder.CreateCondBr(PrevCondVal, PrevBodyBB, ElifCondBB);
 
         Builder.SetInsertPoint(ElifCondBB);
         Elif->getCondition()->accept(*this);

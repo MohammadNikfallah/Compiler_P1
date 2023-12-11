@@ -107,6 +107,7 @@ DecStatement *Parser::parseDec()
         advance();
     }
 
+
     if (Tok.is(Token::equal))
     {
         advance();
@@ -123,12 +124,15 @@ DecStatement *Parser::parseDec()
                 exprs.push_back(e);
             else
                 goto _error;
+            if(Tok.getKind() == Token::semicolon)
+                break;
             advance();
         }
     }
 
-    if (vars.size() < exprs.size() || expect(Token::semicolon))
+    if (vars.size() < exprs.size() || expect(Token::semicolon)){
         goto _error;
+    }
 
     return new DecStatement(vars, exprs);
 _error:
@@ -232,6 +236,7 @@ Expression *Parser::parseFactor()
 Expression *Parser::parseFinal()
 {
     Expression *Res = nullptr;
+    
     switch (Tok.getKind())
     {
     case Token::number:
@@ -245,8 +250,9 @@ Expression *Parser::parseFinal()
     case Token::l_paren:
         advance();
         Res = parseExpr();
-        if (!consume(Token::r_paren))
+        if (!consume(Token::r_paren)){
             break;
+        }
     default:
         if (!Res)
             error();

@@ -263,12 +263,12 @@ namespace
         Builder.CreateCondBr(PrevCondVal, PrevBodyBB, ElifCondBB);
 
         Builder.SetInsertPoint(ElifCondBB);
-        Elif.getCondition()->accept(*this);
+        Elif->getCondition()->accept(*this);
         llvm::Value* ElifCondVal = V;
         Builder.CreateCondBr(ElifCondVal, ElifBodyBB, nullptr);
 
         Builder.SetInsertPoint(ElifBodyBB);
-        Elif.accept(*this);
+        Elif->accept(*this);
         Builder.CreateBr(AfterIfBB);
 
         PrevCondBB = ElifCondBB;
@@ -277,7 +277,7 @@ namespace
       }
 
       llvm::BasicBlock* ElseBB = nullptr;
-      ElseStatement els = Node.getElse();
+      ElseStatement* els = Node.getElse();
       if (els) {
           ElseBB = llvm::BasicBlock::Create(MainFn->getContext(), "else.body", MainFn);
           Builder.SetInsertPoint(ElseBB);

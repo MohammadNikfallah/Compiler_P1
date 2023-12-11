@@ -11,6 +11,7 @@ namespace
 {
   class ToIRVisitor : public ASTVisitor
   {
+    
     Module *M;
     IRBuilder<> Builder;
     Type *VoidTy;
@@ -18,6 +19,8 @@ namespace
     Type *Int8PtrTy;
     Type *Int8PtrPtrTy;
     Constant *Int32Zero;
+    llvm::FunctionType* MainFty;
+    llvm::Function* MainFn;
 
     Value *V;
     StringMap<AllocaInst *> nameMap;
@@ -58,7 +61,7 @@ namespace
       // Iterate over the children of the GSM node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
       {
-        (*I)->accept(*this);
+        (*I)->accept(*this);//check for error in I!=E
       }
     };
 
@@ -113,6 +116,7 @@ namespace
       // Visit the right-hand side of the binary operation and get its value.
       Node.getRight()->accept(*this);
       Value *Right = V;
+
 
       // Perform the binary operation based on the operator type and create the corresponding instruction.
       switch (Node.getOperator())
@@ -219,14 +223,26 @@ namespace
     virtual void visit(AssignStatement& Node) override
         {
             // Visit the right-hand side of the assignment and get its value.
+
             Node.getRValue()->accept(*this);
             Value* val = V;
 
             // Get the name of the variable being assigned.
             auto varName = Node.getLValue()->getValue();
+            auto op=Node.getAssignmentOP();
+            
+
+            switch (Node.getAssignmentOP())
+            {
+              case AssignStatement::AssOp::Assign:
+                Builder.CreateStore(val, nameMap[varName]);
+                break;
+              case AssignStatement::AssOp::PlusAssign:
+                //TODO
+                
+            }
 
             // Create a store instruction to assign the value to the variable.
-            Builder.CreateStore(val, nameMap[varName]);
             FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
 
             // Create a function declaration for the "gsm_write" function.
@@ -234,8 +250,33 @@ namespace
 
             // Create a call instruction to invoke the "gsm_write" function with the value.
             CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
+            
 
         }
+        virtual void visit(LoopStatement& Node) override
+        {
+          llvm::BasicBlock* WhileCondBB = llvm::BasicBlock::Create(M->getContext(), "loopc.cond", MainFn);
+          llvm::BasicBlock* WhileBodyBB = llvm::BasicBlock::Create(M->getContext(), "loopc.body", MainFn);
+          llvm::BasicBlock* AfterWhileBB = llvm::BasicBlock::Create(M->getContext(), "after.loopc", MainFn);
+
+          Builder.CreateBr(WhileCondBB);
+          Builder.SetInsertPoint(WhileCondBB);
+          Node.getCondition()->accept(*this);
+          Value* val=V;
+          Builder.CreateCondBr(val, WhileBodyBB, AfterWhileBB);
+          Builder.SetInsertPoint(WhileBodyBB);
+          llvm::SmallVector<AssignStatement* > assignStatements = Node.getAssignments();
+          for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
+            {
+                (*I)->accept(*this);//TODO: check for I!=E
+            }
+          Builder.CreateBr(WhileCondBB);
+
+          Builder.SetInsertPoint(AfterWhileBB);
+          
+
+        }
+
 
   };
 }; // namespace

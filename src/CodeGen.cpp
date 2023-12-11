@@ -7,7 +7,7 @@
 using namespace llvm;
 
 // Define a visitor class for generating LLVM IR from the AST.
-namespace
+namespace 
 {
   class ToIRVisitor : public ASTVisitor
   {
@@ -19,11 +19,13 @@ namespace
     Type *Int8PtrTy;
     Type *Int8PtrPtrTy;
     Constant *Int32Zero;
-    llvm::FunctionType* MainFty;
-    llvm::Function* MainFn;
+    
 
     Value *V;
     StringMap<AllocaInst *> nameMap;
+
+    llvm::FunctionType* MainFty;
+    llvm::Function* MainFn;
 
   public:
     // Constructor for the visitor class.
@@ -56,7 +58,7 @@ namespace
     }
 
     // Visit function for the GSM node in the AST.
-    virtual void visit(Root &Node) override
+    virtual void visit(MSM &Node) override
     {
       // Iterate over the children of the GSM node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
@@ -72,12 +74,12 @@ namespace
         AssignStatement* assignStatement=(AssignStatement*)&Node;
         assignStatement->accept(*this);
       }
-      else if (Node.getKind==Statement::StatementType::If)
+      else if (Node.getKind()==Statement::StatementType::If)
       {
         IfStatement* ifStatement=(IfStatement*)&Node;
         ifStatement->accept(*this);
       }
-      else if(Node.getKind==Statement::StatementType::Loop)
+      else if(Node.getKind()==Statement::StatementType::Loop)
       {
         LoopStatement* loopStatement=(LoopStatement*)&Node;
         loopStatement->accept(*this);
@@ -101,8 +103,8 @@ namespace
       {
         // If the factor is a literal, convert it to an integer and create a constant.
         int number;
-        llvm::StringRe strVal = Node.getVal(); 
-        strVal.getAsInteger(10,number)
+        llvm::StringRef strVal = Node.getVal(); 
+        strVal.getAsInteger(10,number);
         V = ConstantInt::get(Int32Ty, number, true);
       }
     };
@@ -134,11 +136,16 @@ namespace
         V = Builder.CreateSDiv(Left, Right);
         break;
       case Expression::Operator::Mod:
+      {
         Value* div = Builder.CreateSDiv(Left, Right);
         Value* mult = Builder.CreateNSWMul(div, Right);
         V = Builder.CreateNSWSub(Left, mult);
         break;
+      }
+        
+      
       case Expression::Operator::Pow:
+      {
         Final * ff = (Final *) Right;
         int RightVal;
         RightVal = ff->getVal().getAsInteger(10, RightVal);
@@ -149,11 +156,12 @@ namespace
         else {
           for (int i = 1; i < RightVal; i++)
           {
-           Left = CreateNSWMul(Left, Left);
+           Left = Builder.CreateNSWMul(Left, Left);
           }
           V = Left;  
           break;
         }
+      }
       }
     };
     virtual void visit(Condition& Node) override
@@ -162,7 +170,7 @@ namespace
             Value* Left = V;
             Node.getRight()->accept(*this);
             Value* Right = V;
-            switch (Node.getOperator())
+            switch (Node.getSign())
             {
             case Condition::Operator::Equal:
                 V = Builder.CreateICmpEQ(Left, Right);
@@ -176,12 +184,6 @@ namespace
             case Condition::Operator::GreaterEqual:
                 V = Builder.CreateICmpSGE(Left, Right);
                 break;
-            case Condition::Operator::And:
-                V = Builder.CreateAnd(Left, Right);
-                break;
-            case Condition::Operator::Or:
-                V = Builder.CreateOr(Left, Right);
-                break;
             case Condition::Operator::Greater:
                 V = Builder.CreateICmpSGT(Left, Right);
                 break;
@@ -190,14 +192,15 @@ namespace
         }
     virtual void visit(DecStatement &Node) override
     {
-      llvm::SmallVector<llvm::StringRef, 8> vars=Node.getVars()
-      llvm::SmallVector<Expression *> Exprs=Node.getExprs()
-
+      llvm::SmallVector<llvm::StringRef, 8> vars=Node.getVars();
+      llvm::SmallVector<Expression *> Exprs=Node.getExprs();
+      auto expr=Exprs.begin();
+      Value* val;
       // Iterate over the variables declared in the declaration statement.
-      for (auto var = vars.begin(), var_end = vars.end(),expr=Exprs.begin(); I != E; ++var )
+      for (auto var = vars.begin(), var_end = vars.end(); var != var_end; ++var )
       {
         llvm::StringRef Var = *var;
-        llvm::SmallVector<Expression *> Expr = *expr;
+        Expression*  Expr = *expr;
         if (Expr)
         {
           // If there is an expression provided, visit it and get its value.
@@ -228,6 +231,16 @@ namespace
         
       }
     };
+    virtual void visit(IfStatement& Node) override{}
+    virtual void visit(ElifStatement& Node) override{}
+    virtual void visit(ElseStatement& Node) override{}
+    virtual void visit(Conditions& Node) override{}
+
+
+    
+
+
+
     virtual void visit(AssignStatement& Node) override
         {
             // Visit the right-hand side of the assignment and get its value.
@@ -235,8 +248,9 @@ namespace
             Node.getRValue()->accept(*this);
             Value* val = V;
 
+
             // Get the name of the variable being assigned.
-            auto varName = Node.getLValue()->getValue();
+            auto varName = Node.getLValue()->getVal();
             auto op=Node.getAssignmentOP();
             
 
@@ -245,7 +259,7 @@ namespace
               case AssignStatement::AssOp::Assign:
                 Builder.CreateStore(val, nameMap[varName]);
                 break;
-              case AssignStatement::AssOp::PlusAssign:
+              // case AssignStatement::AssOp::PlusAssign:
                 //TODO
                 
             }

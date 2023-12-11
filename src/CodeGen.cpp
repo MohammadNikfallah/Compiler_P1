@@ -165,31 +165,32 @@ namespace
       }
     };
     virtual void visit(Condition& Node) override
-        {
-            Node.getLeft()->accept(*this);
-            Value* Left = V;
-            Node.getRight()->accept(*this);
-            Value* Right = V;
-            switch (Node.getSign())
-            {
-            case Condition::Operator::Equal:
-                V = Builder.CreateICmpEQ(Left, Right);
-                break;
-            case Condition::Operator::Less:
-                V = Builder.CreateICmpSLT(Left, Right);
-                break;
-            case Condition::Operator::LessEqual:
-                V = Builder.CreateICmpSLE(Left, Right);
-                break;
-            case Condition::Operator::GreaterEqual:
-                V = Builder.CreateICmpSGE(Left, Right);
-                break;
-            case Condition::Operator::Greater:
-                V = Builder.CreateICmpSGT(Left, Right);
-                break;
-            
-            }
-        }
+    {
+      Node.getLeft()->accept(*this);
+      Value* Left = V;
+      Node.getRight()->accept(*this);
+      Value* Right = V;
+      switch (Node.getSign())
+      {
+      case Condition::Operator::Equal:
+          V = Builder.CreateICmpEQ(Left, Right);
+          break;
+      case Condition::Operator::Less:
+          V = Builder.CreateICmpSLT(Left, Right);
+          break;
+      case Condition::Operator::LessEqual:
+          V = Builder.CreateICmpSLE(Left, Right);
+          break;
+      case Condition::Operator::GreaterEqual:
+          V = Builder.CreateICmpSGE(Left, Right);
+          break;
+      case Condition::Operator::Greater:
+          V = Builder.CreateICmpSGT(Left, Right);
+          break;
+      case Condition::Operator::NotEqual:
+          V = Builder.CreateICMpNE(Left, Right);
+      }
+    }
     virtual void visit(DecStatement &Node) override
     {
       llvm::SmallVector<llvm::StringRef, 8> vars=Node.getVars();
@@ -231,10 +232,99 @@ namespace
         
       }
     };
-    virtual void visit(IfStatement& Node) override{}
-    virtual void visit(ElifStatement& Node) override{}
-    virtual void visit(ElseStatement& Node) override{}
-    virtual void visit(Conditions& Node) override{}
+
+    virtual void visit(IfStatement& Node) override{
+      llvm::BasicBlock* IfCondBB = llvm::BasicBlock::Create(MainFn->getContext(), "if.cond", MainFn);
+      llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(MainFn->getContext(), "if.body", MainFn);
+      llvm::BasicBlock* AfterIfBB = llvm::BasicBlock::Create(MainFn->getContext(), "after.if", MainFn);
+
+      Builder.SetInsertPoint(IfCondBB);
+      Node.getCondition()->accept(*this);
+      llvm::Value* IfCondVal = V;
+      Builder.CreateCondBr(IfCondVal, IfBodyBB, nullptr);
+
+      Builder.SetInsertPoint(IfBodyBB);
+      llvm::SmallVector<AssignStatement* > assignStatements = Node.getAssignments();
+      for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
+      {
+        (*I)->accept(*this);
+      }
+      Builder.CreateBr(AfterIfBB);
+
+      llvm::BasicBlock* PrevCondBB = IfCondBB;
+      llvm::BasicBlock* PrevBodyBB = IfBodyBB;
+      llvm::Value* PrevCondVal = IfCondVal;
+
+      for (auto& Elif : Node.getElifs()) {
+        llvm::BasicBlock* ElifCondBB = llvm::BasicBlock::Create(MainFn->getContext(), "elif.cond", MainFn);
+        llvm::BasicBlock* ElifBodyBB = llvm::BasicBlock::Create(MainFn->getContext(), "elif.body", MainFn);
+
+        Builder.SetInsertPoint(PrevCondBB);
+        Builder.CreateCondBr(PrevCondVal, PrevBodyBB, ElifCondBB);
+
+        Builder.SetInsertPoint(ElifCondBB);
+        Elif.getCondition()->accept(*this);
+        llvm::Value* ElifCondVal = V;
+        Builder.CreateCondBr(ElifCondVal, ElifBodyBB, nullptr);
+
+        Builder.SetInsertPoint(ElifBodyBB);
+        Elif.accept(*this);
+        Builder.CreateBr(AfterIfBB);
+
+        PrevCondBB = ElifCondBB;
+        PrevCondVal = ElifCondVal;
+        PrevBodyBB = ElifBodyBB;
+      }
+
+      llvm::BasicBlock* ElseBB = nullptr;
+      ElseStatement els = Node.getElse();
+      if (els) {
+          ElseBB = llvm::BasicBlock::Create(MainFn->getContext(), "else.body", MainFn);
+          Builder.SetInsertPoint(ElseBB);
+          Node.getElse()->accept(*this);
+          Builder.CreateBr(AfterIfBB);
+
+          Builder.SetInsertPoint(PrevCondBB);
+          Builder.CreateCondBr(IfCondVal, IfBodyBB, ElseBB);
+      } else {
+          Builder.SetInsertPoint(PrevCondBB);
+          Builder.CreateCondBr(IfCondVal, IfBodyBB, AfterIfBB);
+      }
+
+      Builder.SetInsertPoint(AfterIfBB);
+    }
+
+    virtual void visit(ElifStatement& Node) override{
+      llvm::SmallVector<AssignStatement* > assignStatements = Node.getStatements();
+      for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
+      {
+        (*I)->accept(*this);
+      }
+    }
+
+    virtual void visit(ElseStatement& Node) override{
+      llvm::SmallVector<AssignStatement* > assignStatements = Node.getAssignments();
+      for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
+      {
+        (*I)->accept(*this);
+      }
+    }
+
+    virtual void visit(Conditions& Node) override{
+      Node.getLeft()->accept(*this);
+      Value* Left = V;
+      Node.getRight()->accept(*this);
+      Value* Right = V;
+      switch (Node.getSign())
+      {
+      case Conditions::AndOr::And:
+          V = Builder.CreateAnd(Left, Right);
+          break;
+      case Conditions::AndOr::Or:
+          V = Builder.CreateAnd(Left, Right);
+          break;
+      }
+    }
 
 
     
@@ -275,6 +365,7 @@ namespace
             
 
         }
+
         virtual void visit(LoopStatement& Node) override
         {
           llvm::BasicBlock* WhileCondBB = llvm::BasicBlock::Create(M->getContext(), "loopc.cond", MainFn);

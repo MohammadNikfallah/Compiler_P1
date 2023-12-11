@@ -139,13 +139,21 @@ namespace
         V = Builder.CreateNSWSub(Left, mult);
         break;
       case Expression::Operator::Pow:
-        for (int i = 0; i < Right; i++)
-        {
-          Left = CreateNSWMul(Left, Right);
+        Final * ff = (Final *) Right;
+        int RightVal;
+        RightVal = ff->getVal().getAsInteger(10, RightVal);
+        if (RightVal == 0) {
+          V = ConstantInt::get(Int32Ty, 1, true);
+          break;
         }
-        V = Left;
-        
-        break;
+        else {
+          for (int i = 1; i < RightVal; i++)
+          {
+           Left = CreateNSWMul(Left, Left);
+          }
+          V = Left;  
+          break;
+        }
       }
     };
     virtual void visit(Condition& Node) override

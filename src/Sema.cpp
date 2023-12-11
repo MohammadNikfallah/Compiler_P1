@@ -54,7 +54,7 @@ public:
 
     if (Node.getOperator() == Expression::Operator::Div && right) {
       Factor * f = (Factor *)right;
-
+      
       if (right && f->getKind() == Final::ValueKind::Number) {
         int intval;
         f->getVal().getAsInteger(10, intval);

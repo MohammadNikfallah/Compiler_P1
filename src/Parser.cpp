@@ -78,6 +78,7 @@ MSM *Parser::parseMSM()
         advance();
         return nullptr;
     }
+    
     return new MSM(statement);
 }
 
@@ -142,8 +143,6 @@ AssignStatement *Parser::parseAssign()
     Final *f;
     f = (Final *)(parseFactor());
 
-    advance();
-
     if (!Tok.isOneOf(Token::equal, Token::plus_equal, Token::star_equal
     , Token::minus_equal, Token::slash_equal, Token::precent_equal))
     {
@@ -160,14 +159,19 @@ AssignStatement *Parser::parseAssign()
         break;
     case Token::plus_equal:
         a = AssignStatement::AssOp::PlusAssign;
+        break;
     case Token::star_equal:
         a = AssignStatement::AssOp::MulAssign;
+        break;
     case Token::minus_equal:
         a = AssignStatement::AssOp::MinusAssign;
+        break;
     case Token::slash_equal:
         a = AssignStatement::AssOp::DivAssign;
+        break;
     case Token::precent_equal:
         a = AssignStatement::AssOp::ModAssign;
+        break;
     default:
         goto _error3;
         break;
@@ -175,6 +179,7 @@ AssignStatement *Parser::parseAssign()
 
     advance();
     e = parseExpr();
+    
     return (new AssignStatement(f, a, e));
 
 _error3:
@@ -264,7 +269,6 @@ IfStatement *Parser::parseIf()
     advance();
 
     Conditions *conditions = parseConditions();
-    advance();
 
     if (!Tok.is(Token::colon))
     {
@@ -273,12 +277,14 @@ IfStatement *Parser::parseIf()
     }
     advance();
 
+
     if (!Tok.is(Token::begin))
     {
         error();
         return nullptr;
     }
     advance();
+    
     
     llvm::SmallVector<AssignStatement *> statement;
     bool flag = false;
@@ -297,6 +303,7 @@ IfStatement *Parser::parseIf()
             }
             if (a)
                 statement.push_back(a);
+            advance();
         }
     }
     advance();
@@ -310,17 +317,20 @@ IfStatement *Parser::parseIf()
             flag = true;
             break;
         }
+        advance();
     }
+    llvm::errs() << "in if too else " << Tok.getText() << '\n';
     if(flag){
         while (Tok.getKind() != Token::eoi)
             advance();
         return nullptr;
     }
-    advance();
+    llvm::errs() << "after error " << Tok.getText() << '\n';
     ElseStatement *el = nullptr;
     if(Tok.is(Token::KW_else)){
         el = parseElse();
     } 
+    llvm::errs() << "after error " << Tok.getText() << '\n';
     return new IfStatement(conditions, statement, elifs, el);
 }
 
@@ -336,7 +346,6 @@ ElifStatement *Parser::parseElif()
     advance();
 
     Conditions *conditions = parseConditions();
-    advance();
 
     if (!Tok.is(Token::colon))
     {
@@ -367,6 +376,7 @@ ElifStatement *Parser::parseElif()
             }
             if (a)
                 statement.push_back(a);
+            advance();
         }
     }
     Res = new ElifStatement(conditions, statement);
@@ -379,6 +389,7 @@ _errorelif:
 
 ElseStatement *Parser::parseElse()
 {
+    llvm::errs() << "in else " << Tok.getText() << '\n';
     ElseStatement *Res = nullptr;
 
     if (!Tok.is(Token::KW_else))
@@ -419,6 +430,7 @@ ElseStatement *Parser::parseElse()
             }
             if (a)
                 statement.push_back(a);
+            advance();
         }
     }
     if(flag)
@@ -434,6 +446,7 @@ LoopStatement *Parser::parseLoop()
 {
     LoopStatement *Res = nullptr;
 
+
     if (!Tok.is(Token::KW_loopc))
     {
         error();
@@ -442,7 +455,8 @@ LoopStatement *Parser::parseLoop()
     advance();
 
     Conditions *conditions = parseConditions();
-    advance();
+
+
 
     if (!Tok.is(Token::colon))
     {
@@ -461,7 +475,8 @@ LoopStatement *Parser::parseLoop()
 
     while (!Tok.is(Token::end))
     {
-
+        llvm::errs() << Tok.getText() << '\n';
+        llvm::errs() << Tok.getKind() << '\n';
         if(Tok.is(Token::ident)){
             AssignStatement *a;
             a = parseAssign();
@@ -473,6 +488,7 @@ LoopStatement *Parser::parseLoop()
             }
             if (a)
                 statement.push_back(a);
+            advance();
         }
     }
     Res = new LoopStatement(conditions, statement);
@@ -523,7 +539,7 @@ Condition *Parser::parseCondition()
         Op = Condition::Operator::NotEqual;
         break;
     
-    default:  
+    default:
         while (Tok.getKind() != Token::eoi)
             advance();
         return nullptr;

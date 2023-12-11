@@ -43,8 +43,8 @@ namespace
     void run(AST *Tree)
     {
       // Create the main function with the appropriate function type.
-      FunctionType *MainFty = FunctionType::get(Int32Ty, {Int32Ty, Int8PtrPtrTy}, false);
-      Function *MainFn = Function::Create(MainFty, GlobalValue::ExternalLinkage, "main", M);
+      MainFty = FunctionType::get(Int32Ty, {Int32Ty, Int8PtrPtrTy}, false);
+      MainFn = Function::Create(MainFty, GlobalValue::ExternalLinkage, "main", M);
 
       // Create a basic block for the entry point of the main function.
       BasicBlock *BB = BasicBlock::Create(M->getContext(), "entry", MainFn);
@@ -234,38 +234,47 @@ namespace
     };
 
     virtual void visit(IfStatement& Node) override{
-      llvm::BasicBlock* IfCondBB = llvm::BasicBlock::Create(MainFn->getContext(), "if.cond", MainFn);
-      llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(MainFn->getContext(), "if.body", MainFn);
-      llvm::BasicBlock* AfterIfBB = llvm::BasicBlock::Create(MainFn->getContext(), "after.if", MainFn);
+      llvm::errs() << "hhh\n";
+      llvm::BasicBlock* IfCondBB = llvm::BasicBlock::Create(M->getContext(), "if.cond", MainFn);
+      llvm::errs() << "hhh\n";
+      llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(M->getContext(), "if.body", MainFn);
+      llvm::errs() << "hhh\n";
+      llvm::BasicBlock* AfterIfBB = llvm::BasicBlock::Create(M->getContext(), "after.if", MainFn);
 
+      llvm::errs() << "hhh\n";
       Builder.SetInsertPoint(IfCondBB);
       Node.getCondition()->accept(*this);
       llvm::Value* IfCondVal = V;
-      Builder.CreateCondBr(IfCondVal, IfBodyBB, nullptr);
+      // Builder.CreateCondBr(IfCondVal, IfBodyBB, nullptr);
+      llvm::errs() << "hhh\n";
 
       Builder.SetInsertPoint(IfBodyBB);
+            llvm::errs() << "hhh\n";
+
       llvm::SmallVector<AssignStatement* > assignStatements = Node.getAssignments();
       for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
       {
         (*I)->accept(*this);
       }
       Builder.CreateBr(AfterIfBB);
+            llvm::errs() << "hhh\n";
+
 
       llvm::BasicBlock* PrevCondBB = IfCondBB;
       llvm::BasicBlock* PrevBodyBB = IfBodyBB;
       llvm::Value* PrevCondVal = IfCondVal;
 
       for (auto& Elif : Node.getElifs()) {
-        llvm::BasicBlock* ElifCondBB = llvm::BasicBlock::Create(MainFn->getContext(), "elif.cond", MainFn);
-        llvm::BasicBlock* ElifBodyBB = llvm::BasicBlock::Create(MainFn->getContext(), "elif.body", MainFn);
+        llvm::BasicBlock* ElifCondBB = llvm::BasicBlock::Create(M->getContext(), "elif.cond", MainFn);
+        llvm::BasicBlock* ElifBodyBB = llvm::BasicBlock::Create(M->getContext(), "elif.body", MainFn);
 
         Builder.SetInsertPoint(PrevCondBB);
-        Builder.CreateCondBr(PrevCondVal, PrevBodyBB, ElifCondBB);
+        Builder.CreateCondBr(PrevCondVal, ElifBodyBB, ElifCondBB);
 
         Builder.SetInsertPoint(ElifCondBB);
         Elif->getCondition()->accept(*this);
         llvm::Value* ElifCondVal = V;
-        Builder.CreateCondBr(ElifCondVal, ElifBodyBB, nullptr);
+        // Builder.CreateCondBr(ElifCondVal, ElifBodyBB, nullptr);
 
         Builder.SetInsertPoint(ElifBodyBB);
         Elif->accept(*this);
@@ -279,16 +288,16 @@ namespace
       llvm::BasicBlock* ElseBB = nullptr;
       ElseStatement* els = Node.getElse();
       if (els) {
-          ElseBB = llvm::BasicBlock::Create(MainFn->getContext(), "else.body", MainFn);
+          ElseBB = llvm::BasicBlock::Create(M->getContext(), "else.body", MainFn);
           Builder.SetInsertPoint(ElseBB);
           Node.getElse()->accept(*this);
           Builder.CreateBr(AfterIfBB);
 
           Builder.SetInsertPoint(PrevCondBB);
-          Builder.CreateCondBr(IfCondVal, IfBodyBB, ElseBB);
+          Builder.CreateCondBr(PrevCondVal, PrevBodyBB, ElseBB);
       } else {
           Builder.SetInsertPoint(PrevCondBB);
-          Builder.CreateCondBr(IfCondVal, IfBodyBB, AfterIfBB);
+          Builder.CreateCondBr(IfCondVal, PrevBodyBB, AfterIfBB);
       }
 
       Builder.SetInsertPoint(AfterIfBB);
@@ -334,7 +343,7 @@ namespace
     virtual void visit(AssignStatement& Node) override
         {
             // Visit the right-hand side of the assignment and get its value.
-
+          
             Node.getRValue()->accept(*this);
             Value* val = V;
 
@@ -342,13 +351,52 @@ namespace
             // Get the name of the variable being assigned.
             auto varName = Node.getLValue()->getVal();
             auto op=Node.getAssignmentOP();
-            
 
+      //       Expression::Operator::Plus:
+      //   V = Builder.CreateNSWAdd(Left, Right);
+      //   break;
+      // case Expression::Operator::Minus:
+      //   V = Builder.CreateNSWSub(Left, Right);
+      //   break;
+      // case Expression::Operator::Mul:
+      //   V = Builder.CreateNSWMul(Left, Right);
+      //   break;
+      // case Expression::Operator::Div:
+      //   V = Builder.CreateSDiv(Left, Right);
+            
+            Value* tempVal;
             switch (Node.getAssignmentOP())
             {
               case AssignStatement::AssOp::Assign:
                 Builder.CreateStore(val, nameMap[varName]);
                 break;
+              case AssignStatement::AssOp::DivAssign:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Builder.CreateStore(Builder.CreateSDiv(tempVal, val), nameMap[varName]);
+                break;
+              }
+              case AssignStatement::AssOp::ModAssign:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Value* div = Builder.CreateSDiv(tempVal, val);
+                Value* mult = Builder.CreateNSWMul(div, val);
+                Builder.CreateStore(Builder.CreateNSWSub(tempVal, mult), nameMap[varName]);
+                break;
+              }
+              case AssignStatement::AssOp::MulAssign:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Builder.CreateStore(Builder.CreateNSWMul(tempVal, val), nameMap[varName]);
+                break;
+              }
+              case AssignStatement::AssOp::PlusAssign:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Builder.CreateStore(Builder.CreateNSWAdd(tempVal, val), nameMap[varName]);
+                break;
+              }
+              case AssignStatement::AssOp::MinusAssign:{
+                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+                Builder.CreateStore(Builder.CreateNSWSub(tempVal, val), nameMap[varName]);
+                break;
+              }
               // case AssignStatement::AssOp::PlusAssign:
                 //TODO
                 
@@ -358,7 +406,7 @@ namespace
             FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
 
             // Create a function declaration for the "gsm_write" function.
-            Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
+            Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "msm_write", M);
 
             // Create a call instruction to invoke the "gsm_write" function with the value.
             CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
@@ -398,7 +446,7 @@ void CodeGen::compile(AST *Tree)
 {
   // Create an LLVM context and a module.
   LLVMContext Ctx;
-  Module *M = new Module("calc.expr", Ctx);
+  Module *M = new Module("MSM.expr", Ctx);
 
   // Create an instance of the ToIRVisitor and run it on the AST to generate LLVM IR.
   ToIRVisitor ToIR(M);

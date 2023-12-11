@@ -53,7 +53,7 @@ public:
       HasError = true;
 
     if (Node.getOperator() == Expression::Operator::Div && right) {
-      Factor * f = (Factor *)right;
+      Final * f = (Final *)right;
       
       if (right && f->getKind() == Final::ValueKind::Number) {
         int intval;
@@ -87,15 +87,27 @@ public:
   //   if (Node.getRight())
   //     Node.getRight()->accept(*this);
   // };
-
+      
+    virtual void visit(Statement &) override{}
+    virtual void visit(AssignStatement &)override{}
+    virtual void visit(IfStatement &) override{}
+    virtual void visit(ElifStatement &) override{}
+    virtual void visit(ElseStatement &) override{}
+    virtual void visit(Condition &) override{}
+    virtual void visit(LoopStatement &) override{}
+    virtual void visit(Conditions &) override{}
   virtual void visit(DecStatement &Node) override {
-    for (auto I = Node.begin(), E = Node.end(); I != E;
+    for (auto I = Node.getVars().begin(), E = Node.getVars().end(); I != E;
          ++I) {
       if (!Scope.insert(*I).second)
         error(Twice, *I); // If the insertion fails (element already exists in Scope), report a "Twice" error
     }
-    if (Node.getExpr())
-      Node.getExpr()->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
+    if (Node.getExprs().size() > 0 ){
+      for (auto i=Node.getExprs().begin(),j=Node.getExprs().end(); j!=i ; ++i)
+      {
+        (*i)->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
+      }
+    }
   };
 };
 }

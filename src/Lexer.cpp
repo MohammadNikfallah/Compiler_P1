@@ -62,6 +62,8 @@ void Lexer::next(Token &token)
             kind=Token::end;
         else if (Name=="begin")
             kind=Token::begin;
+        else if (Name=="loopc")
+            kind=Token::KW_loopc;
         else
             kind = Token::ident;
         // generate the token
@@ -112,14 +114,15 @@ void Lexer::next(Token &token)
             CASE('*', Token::star);
             CASE('/', Token::slash);
             CASE('%', Token::percent);
-            CASE('^',Token::power);
+            CASE('^', Token::power);
             CASE('(', Token::l_paren);
             CASE(')', Token::r_paren);
             CASE(';', Token::semicolon);
             CASE(',', Token::comma);
             CASE('=', Token::equal);
             CASE('>', Token::bigger);
-            CASE('<',Token::less);
+            CASE('<', Token::less);
+            CASE(':', Token::colon);
 #undef CASE
         default:
             formToken(token, BufferPtr + 1, Token::unknown);

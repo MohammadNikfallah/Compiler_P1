@@ -234,14 +234,10 @@ namespace
     };
 
     virtual void visit(IfStatement& Node) override{
-      llvm::errs() << "hhh\n";
       llvm::BasicBlock* IfCondBB = llvm::BasicBlock::Create(M->getContext(), "if.cond", MainFn);
-      llvm::errs() << "hhh\n";
       llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(M->getContext(), "if.body", MainFn);
-      llvm::errs() << "hhh\n";
       llvm::BasicBlock* AfterIfBB = llvm::BasicBlock::Create(M->getContext(), "after.if", MainFn);
 
-      llvm::errs() << "hhh\n";
       Builder.SetInsertPoint(IfCondBB);
       Node.getCondition()->accept(*this);
       llvm::Value* IfCondVal = V;

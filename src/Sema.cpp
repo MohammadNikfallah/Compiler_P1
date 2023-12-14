@@ -38,6 +38,7 @@ public:
         error(Not, Node.getVal());
     }
   };
+  
 
   // Visit function for BinaryOp nodes
   virtual void visit(Expression &Node) override {
@@ -88,14 +89,105 @@ public:
   //     Node.getRight()->accept(*this);
   // };
       
-  virtual void visit(Statement &) override{}
-  virtual void visit(AssignStatement &)override{}
-  virtual void visit(IfStatement &) override{}
-  virtual void visit(ElifStatement &) override{}
-  virtual void visit(ElseStatement &) override{}
-  virtual void visit(Condition &) override{}
-  virtual void visit(LoopStatement &) override{}
-  virtual void visit(Conditions &) override{}
+  virtual void visit(Statement &Node) override
+    {
+      if (Node.getKind()==Statement::StatementType::Assignment)
+      {
+        AssignStatement* assignStatement=(AssignStatement*)&Node;
+        assignStatement->accept(*this);
+      }
+      else if (Node.getKind()==Statement::StatementType::If)
+      {
+        IfStatement* ifStatement=(IfStatement*)&Node;
+        ifStatement->accept(*this);
+      }
+      else if(Node.getKind()==Statement::StatementType::Loop)
+      {
+        LoopStatement* loopStatement=(LoopStatement*)&Node;
+        loopStatement->accept(*this);
+      }
+      else 
+      {
+        DecStatement* dec = (DecStatement*)&Node;
+        dec->accept(*this);
+
+      }
+    };
+    
+  virtual void visit(AssignStatement &Node)override{
+    if (!Scope.count(Node.getLValue()->getVal()))
+        error(Not, Node.getLValue()->getVal());
+    Expression* right = Node.getRValue();
+    if (right)
+      right->accept(*this);
+    else
+      HasError = true;
+
+    if (Node.getAssignmentOP() == AssignStatement::AssOp::DivAssign && right) {
+      Final * f = (Final *)right;
+      
+      if (right && f->getKind() == Final::ValueKind::Number) {
+        int intval;
+        f->getVal().getAsInteger(10, intval);
+
+
+        if (intval == 0) {
+          llvm::errs() << "Division by zero is not allowed." << "\n";
+          HasError = true;
+        }
+      }
+    }
+    
+    
+  }
+  virtual void visit(IfStatement &Node) override{
+    Node.getCondition()->accept(*this);
+    llvm::SmallVector<AssignStatement* > assignments = Node.getAssignments();
+    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I)
+      {
+        (*I)->accept(*this);
+      }
+    llvm::SmallVector<ElifStatement* > elifs = Node.getElifs();
+    for (auto I = elifs.begin(), E = elifs.end(); I != E; ++I)
+      {
+        (*I)->accept(*this);
+      }
+    auto els = Node.getElse();
+    if(els)
+      Node.getElse()->accept(*this);
+  }
+  virtual void visit(ElifStatement &Node) override{
+    Node.getCondition()->accept(*this);
+    llvm::SmallVector<AssignStatement* > assignments = Node.getAssignments();
+    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I)
+      {
+          (*I)->accept(*this);
+      }
+  }
+  virtual void visit(ElseStatement &Node) override{
+    llvm::SmallVector<AssignStatement* > assignments = Node.getAssignments();
+    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I)
+            {
+                (*I)->accept(*this);
+            }
+  }
+  virtual void visit(Condition &Node) override{
+    Node.getLeft()->accept(*this);
+    Node.getRight()->accept(*this);
+  }
+  virtual void visit(LoopStatement &Node) override{
+    Node.getCondition()->accept(*this);
+
+    llvm::SmallVector<AssignStatement* > assignments = Node.getAssignments();
+    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I)
+            {
+                (*I)->accept(*this);
+            }
+  }
+  virtual void visit(Conditions &Node) override{
+    Node.getLeft()->accept(*this);
+    Node.getRight()->accept(*this);
+  }
   
   virtual void visit(DecStatement &Node) override {
     for (auto I = Node.getVars().begin(), E = Node.getVars().end(); I != E;

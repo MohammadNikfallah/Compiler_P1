@@ -6,18 +6,18 @@
 #include "llvm/Support/raw_ostream.h"
 
 class AST; // Abstract Syntax Tree
-class MSM; // Top-level program
+class MSM; // list of statements for main
 class Statement; // Top-level statement
 class Expression; // Binary operation of numbers and identifiers
-class AssignStatement; // Assignment statement like a = 3;
-class DecStatement; // Declaration statement like int a;
-class IfStatement;
+class AssignStatement; // a = 2;
+class DecStatement; // int a = 2;
+class IfStatement; 
 class ElifStatement;
 class ElseStatement;
-class Condition;
+class Condition; // expression == expression
 class LoopStatement;
-class Conditions;
-class Final;
+class Conditions; // "and" and "or" for condition
+class Final; // identifiers or numbers
 
 class ASTVisitor
 {

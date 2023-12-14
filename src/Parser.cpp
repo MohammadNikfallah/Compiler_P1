@@ -126,7 +126,6 @@ DecStatement *Parser::parseDec()
                 goto _error;
             if(Tok.getKind() == Token::semicolon)
                 break;
-            advance();
         }
     }
 

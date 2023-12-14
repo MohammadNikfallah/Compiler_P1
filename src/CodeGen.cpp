@@ -266,10 +266,10 @@ namespace
       llvm::BasicBlock* IfBodyBB = llvm::BasicBlock::Create(M->getContext(), "if.body", MainFn);
       llvm::BasicBlock* AfterIfBB = llvm::BasicBlock::Create(M->getContext(), "after.if", MainFn);
 
+      Builder.CreateBr(IfCondBB);
       Builder.SetInsertPoint(IfCondBB);
       Node.getCondition()->accept(*this);
       llvm::Value* IfCondVal = V;
-      // Builder.CreateCondBr(IfCondVal, IfBodyBB, nullptr);
 
       Builder.SetInsertPoint(IfBodyBB);
             llvm::errs() << "hhh\n";
@@ -429,7 +429,7 @@ namespace
             FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
 
             // Create a function declaration for the "gsm_write" function.
-            Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "msm_write", M);
+            Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
 
             // Create a call instruction to invoke the "gsm_write" function with the value.
             CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
@@ -457,8 +457,6 @@ namespace
           Builder.CreateBr(WhileCondBB);
 
           Builder.SetInsertPoint(AfterWhileBB);
-          
-
         }
 
 

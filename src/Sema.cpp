@@ -88,14 +88,15 @@ public:
   //     Node.getRight()->accept(*this);
   // };
       
-    virtual void visit(Statement &) override{}
-    virtual void visit(AssignStatement &)override{}
-    virtual void visit(IfStatement &) override{}
-    virtual void visit(ElifStatement &) override{}
-    virtual void visit(ElseStatement &) override{}
-    virtual void visit(Condition &) override{}
-    virtual void visit(LoopStatement &) override{}
-    virtual void visit(Conditions &) override{}
+  virtual void visit(Statement &) override{}
+  virtual void visit(AssignStatement &)override{}
+  virtual void visit(IfStatement &) override{}
+  virtual void visit(ElifStatement &) override{}
+  virtual void visit(ElseStatement &) override{}
+  virtual void visit(Condition &) override{}
+  virtual void visit(LoopStatement &) override{}
+  virtual void visit(Conditions &) override{}
+  
   virtual void visit(DecStatement &Node) override {
     for (auto I = Node.getVars().begin(), E = Node.getVars().end(); I != E;
          ++I) {

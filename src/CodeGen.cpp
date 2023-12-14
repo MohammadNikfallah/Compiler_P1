@@ -20,6 +20,8 @@ namespace
     Type *Int8PtrPtrTy;
     Constant *Int32Zero;
     Constant *Int32One;
+    Function *CalcWriteFn;
+    FunctionType *CalcWriteFnTy;
     
 
     Value *V;
@@ -39,6 +41,8 @@ namespace
       Int8PtrPtrTy = Int8PtrTy->getPointerTo();
       Int32Zero = ConstantInt::get(Int32Ty, 0, true);
       Int32One = ConstantInt::get(Int32Ty, 1, true);
+      CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
+      CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
     }
 
     // Entry point for generating LLVM IR from the AST.
@@ -94,8 +98,6 @@ namespace
       }
     };
     
-
-
     virtual void visit(Final &Node) override
     {
       if (Node.getKind() == Final::Ident)
@@ -374,18 +376,6 @@ namespace
             // Get the name of the variable being assigned.
             auto varName = Node.getLValue()->getVal();
             auto op=Node.getAssignmentOP();
-
-      //       Expression::Operator::Plus:
-      //   V = Builder.CreateNSWAdd(Left, Right);
-      //   break;
-      // case Expression::Operator::Minus:
-      //   V = Builder.CreateNSWSub(Left, Right);
-      //   break;
-      // case Expression::Operator::Mul:
-      //   V = Builder.CreateNSWMul(Left, Right);
-      //   break;
-      // case Expression::Operator::Div:
-      //   V = Builder.CreateSDiv(Left, Right);
             
             Value* tempVal;
             switch (Node.getAssignmentOP())
@@ -424,17 +414,7 @@ namespace
                 //TODO
                 
             }
-
-            // Create a store instruction to assign the value to the variable.
-            FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
-
-            // Create a function declaration for the "gsm_write" function.
-            Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
-
-            // Create a call instruction to invoke the "gsm_write" function with the value.
             CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
-            
-
         }
 
         virtual void visit(LoopStatement& Node) override
@@ -452,7 +432,7 @@ namespace
           llvm::SmallVector<AssignStatement* > assignStatements = Node.getAssignments();
           for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
             {
-                (*I)->accept(*this);//TODO: check for I!=E
+                (*I)->accept(*this);
             }
           Builder.CreateBr(WhileCondBB);
 
@@ -461,13 +441,13 @@ namespace
 
 
   };
-}; // namespace
+};
 
 void CodeGen::compile(AST *Tree)
 {
   // Create an LLVM context and a module.
   LLVMContext Ctx;
-  Module *M = new Module("MSM.expr", Ctx);
+  Module *M = new Module("GSM.expr", Ctx);
 
   // Create an instance of the ToIRVisitor and run it on the AST to generate LLVM IR.
   ToIRVisitor ToIR(M);

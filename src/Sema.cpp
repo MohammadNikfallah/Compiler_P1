@@ -24,8 +24,7 @@ public:
 
   // Visit function for GSM nodes
   virtual void visit(MSM &Node) override { 
-    for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
-    {
+    for (auto I = Node.begin(), E = Node.end(); I != E; ++I){
       (*I)->accept(*this); // Visit each child node
     }
   };
@@ -67,28 +66,8 @@ public:
       }
     }
   };
-
-  // Visit function for Assignment nodes
-  // virtual void visit(Assig &Node) override {
-  //   Factor *dest = Node.getLeft();
-
-  //   dest->accept(*this);
-
-  //   if (dest->getKind() == Factor::Number) {
-  //       llvm::errs() << "Assignment destination must be an identifier.";
-  //       HasError = true;
-  //   }
-
-  //   if (dest->getKind() == Factor::Ident) {
-  //     // Check if the identifier is in the scope
-  //     if (Scope.find(dest->getVal()) == Scope.end())
-  //       error(Not, dest->getVal());
-  //   }
-
-  //   if (Node.getRight())
-  //     Node.getRight()->accept(*this);
-  // };
       
+
   virtual void visit(Statement &Node) override
     {
       if (Node.getKind()==Statement::StatementType::Assignment)
@@ -114,6 +93,7 @@ public:
       }
     };
     
+
   virtual void visit(AssignStatement &Node)override{
     if (!Scope.count(Node.getLValue()->getVal()))
         error(Not, Node.getLValue()->getVal());
@@ -136,74 +116,79 @@ public:
           HasError = true;
         }
       }
-    }
-    
-    
+    }   
   }
+
+
   virtual void visit(IfStatement &Node) override{
     Node.getCondition()->accept(*this);
     llvm::SmallVector<AssignStatement* > assignments = Node.getAssignments();
-    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I)
-      {
-        (*I)->accept(*this);
-      }
+    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I){
+      (*I)->accept(*this);
+    }
     llvm::SmallVector<ElifStatement* > elifs = Node.getElifs();
-    for (auto I = elifs.begin(), E = elifs.end(); I != E; ++I)
-      {
-        (*I)->accept(*this);
-      }
+    for (auto I = elifs.begin(), E = elifs.end(); I != E; ++I){
+      (*I)->accept(*this);
+    }
     auto els = Node.getElse();
     if(els)
       Node.getElse()->accept(*this);
   }
+
+
   virtual void visit(ElifStatement &Node) override{
     Node.getCondition()->accept(*this);
     llvm::SmallVector<AssignStatement* > assignments = Node.getAssignments();
-    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I)
-      {
-          (*I)->accept(*this);
-      }
+    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I){
+      (*I)->accept(*this);
+    }
   }
+
+
   virtual void visit(ElseStatement &Node) override{
     llvm::SmallVector<AssignStatement* > assignments = Node.getAssignments();
-    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I)
-            {
-                (*I)->accept(*this);
-            }
+    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I){
+      (*I)->accept(*this);
+    }
   }
+
+
   virtual void visit(Condition &Node) override{
     Node.getLeft()->accept(*this);
     Node.getRight()->accept(*this);
   }
+
+
   virtual void visit(LoopStatement &Node) override{
     Node.getCondition()->accept(*this);
 
     llvm::SmallVector<AssignStatement* > assignments = Node.getAssignments();
-    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I)
-            {
-                (*I)->accept(*this);
-            }
+    for (auto I = assignments.begin(), E = assignments.end(); I != E; ++I){
+      (*I)->accept(*this);
+    }
   }
+
+
   virtual void visit(Conditions &Node) override{
     Node.getLeft()->accept(*this);
     Node.getRight()->accept(*this);
   }
   
+
   virtual void visit(DecStatement &Node) override {
-    for (auto I = Node.getVars().begin(), E = Node.getVars().end(); I != E;
-         ++I) {
+    for (auto I = Node.getVars().begin(), E = Node.getVars().end(); I != E;++I) {
       if (!Scope.insert(*I).second)
         error(Twice, *I); // If the insertion fails (element already exists in Scope), report a "Twice" error
     }
     if (Node.getExprs().size() > 0 ){
-      for (auto i=Node.getExprs().begin(),j=Node.getExprs().end(); j!=i ; ++i)
-      {
+      for (auto i=Node.getExprs().begin(),j=Node.getExprs().end(); j!=i ; ++i){
         (*i)->accept(*this); // If the Declaration node has an expression, recursively visit the expression node
       }
     }
   };
 };
 }
+
 
 bool Sema::semantic(AST *Tree) {
   if (!Tree)

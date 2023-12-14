@@ -23,7 +23,6 @@ namespace
     Function *CalcWriteFn;
     FunctionType *CalcWriteFnTy;
     
-
     Value *V;
     StringMap<AllocaInst *> nameMap;
 
@@ -157,7 +156,6 @@ namespace
         ff->getVal().getAsInteger(10,RightValue);
         
         Value* LeftVal= Left;
-        llvm::errs()<<RightValue<<"mahan\n";
       
         if (RightValue == 0) {
           V = ConstantInt::get(Int32Ty, 1, true);
@@ -184,22 +182,22 @@ namespace
       switch (Node.getSign())
       {
       case Condition::Operator::Equal:
-          V = Builder.CreateICmpEQ(Left, Right);
-          break;
+        V = Builder.CreateICmpEQ(Left, Right);
+        break;
       case Condition::Operator::Less:
-          V = Builder.CreateICmpSLT(Left, Right);
-          break;
+        V = Builder.CreateICmpSLT(Left, Right);
+        break;
       case Condition::Operator::LessEqual:
-          V = Builder.CreateICmpSLE(Left, Right);
-          break;
+        V = Builder.CreateICmpSLE(Left, Right);
+        break;
       case Condition::Operator::GreaterEqual:
-          V = Builder.CreateICmpSGE(Left, Right);
-          break;
+        V = Builder.CreateICmpSGE(Left, Right);
+        break;
       case Condition::Operator::Greater:
-          V = Builder.CreateICmpSGT(Left, Right);
-          break;
+        V = Builder.CreateICmpSGT(Left, Right);
+        break;
       case Condition::Operator::NotEqual:
-          V = Builder.CreateICmpNE(Left, Right);
+        V = Builder.CreateICmpNE(Left, Right);
       }
     }
     virtual void visit(DecStatement &Node) override
@@ -255,7 +253,6 @@ namespace
       llvm::Value* IfCondVal = V;
 
       Builder.SetInsertPoint(IfBodyBB);
-            llvm::errs() << "hhh\n";
 
       llvm::SmallVector<AssignStatement* > assignStatements = Node.getAssignments();
       for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
@@ -293,16 +290,16 @@ namespace
       llvm::BasicBlock* ElseBB = nullptr;
       ElseStatement* els = Node.getElse();
       if (els) {
-          ElseBB = llvm::BasicBlock::Create(M->getContext(), "else.body", MainFn);
-          Builder.SetInsertPoint(ElseBB);
-          Node.getElse()->accept(*this);
-          Builder.CreateBr(AfterIfBB);
+        ElseBB = llvm::BasicBlock::Create(M->getContext(), "else.body", MainFn);
+        Builder.SetInsertPoint(ElseBB);
+        Node.getElse()->accept(*this);
+        Builder.CreateBr(AfterIfBB);
 
-          Builder.SetInsertPoint(PrevCondBB);
-          Builder.CreateCondBr(PrevCondVal, PrevBodyBB, ElseBB);
+        Builder.SetInsertPoint(PrevCondBB);
+        Builder.CreateCondBr(PrevCondVal, PrevBodyBB, ElseBB);
       } else {
-          Builder.SetInsertPoint(PrevCondBB);
-          Builder.CreateCondBr(IfCondVal, PrevBodyBB, AfterIfBB);
+        Builder.SetInsertPoint(PrevCondBB);
+        Builder.CreateCondBr(IfCondVal, PrevBodyBB, AfterIfBB);
       }
 
       Builder.SetInsertPoint(AfterIfBB);
@@ -310,16 +307,14 @@ namespace
 
     virtual void visit(ElifStatement& Node) override{
       llvm::SmallVector<AssignStatement* > assignStatements = Node.getStatements();
-      for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
-      {
+      for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I){
         (*I)->accept(*this);
       }
     }
 
     virtual void visit(ElseStatement& Node) override{
       llvm::SmallVector<AssignStatement* > assignStatements = Node.getAssignments();
-      for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
-      {
+      for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I){
         (*I)->accept(*this);
       }
     }
@@ -332,63 +327,63 @@ namespace
       switch (Node.getSign())
       {
       case Conditions::AndOr::And:
-          V = Builder.CreateAnd(Left, Right);
-          break;
+        V = Builder.CreateAnd(Left, Right);
+        break;
       case Conditions::AndOr::Or:
-          V = Builder.CreateOr(Left, Right);
-          break;
+        V = Builder.CreateOr(Left, Right);
+        break;
       }
     }
 
     virtual void visit(AssignStatement& Node) override
-        {
-            // Visit the right-hand side of the assignment and get its value.
-          
-            Node.getRValue()->accept(*this);
-            Value* val = V;
+    {
+      // Visit the right-hand side of the assignment and get its value.
+    
+      Node.getRValue()->accept(*this);
+      Value* val = V;
 
 
-            // Get the name of the variable being assigned.
-            auto varName = Node.getLValue()->getVal();
-            auto op=Node.getAssignmentOP();
-            
-            Value* tempVal;
-            switch (Node.getAssignmentOP())
-            {
-              case AssignStatement::AssOp::Assign:
-                Builder.CreateStore(val, nameMap[varName]);
-                break;
-              case AssignStatement::AssOp::DivAssign:{
-                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
-                Builder.CreateStore(Builder.CreateSDiv(tempVal, val), nameMap[varName]);
-                break;
-              }
-              case AssignStatement::AssOp::ModAssign:{
-                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
-                Value* div = Builder.CreateSDiv(tempVal, val);
-                Value* mult = Builder.CreateNSWMul(div, val);
-                Builder.CreateStore(Builder.CreateNSWSub(tempVal, mult), nameMap[varName]);
-                break;
-              }
-              case AssignStatement::AssOp::MulAssign:{
-                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
-                Builder.CreateStore(Builder.CreateNSWMul(tempVal, val), nameMap[varName]);
-                break;
-              }
-              case AssignStatement::AssOp::PlusAssign:{
-                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
-                Builder.CreateStore(Builder.CreateNSWAdd(tempVal, val), nameMap[varName]);
-                break;
-              }
-              case AssignStatement::AssOp::MinusAssign:{
-                tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
-                Builder.CreateStore(Builder.CreateNSWSub(tempVal, val), nameMap[varName]);
-                break;
-              }
-                
-            }
-            CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
+      // Get the name of the variable being assigned.
+      auto varName = Node.getLValue()->getVal();
+      auto op=Node.getAssignmentOP();
+      
+      Value* tempVal;
+      switch (Node.getAssignmentOP())
+      {
+        case AssignStatement::AssOp::Assign:
+          Builder.CreateStore(val, nameMap[varName]);
+          break;
+        case AssignStatement::AssOp::DivAssign:{
+          tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+          Builder.CreateStore(Builder.CreateSDiv(tempVal, val), nameMap[varName]);
+          break;
         }
+        case AssignStatement::AssOp::ModAssign:{
+          tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+          Value* div = Builder.CreateSDiv(tempVal, val);
+          Value* mult = Builder.CreateNSWMul(div, val);
+          Builder.CreateStore(Builder.CreateNSWSub(tempVal, mult), nameMap[varName]);
+          break;
+        }
+        case AssignStatement::AssOp::MulAssign:{
+          tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+          Builder.CreateStore(Builder.CreateNSWMul(tempVal, val), nameMap[varName]);
+          break;
+        }
+        case AssignStatement::AssOp::PlusAssign:{
+          tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+          Builder.CreateStore(Builder.CreateNSWAdd(tempVal, val), nameMap[varName]);
+          break;
+        }
+        case AssignStatement::AssOp::MinusAssign:{
+          tempVal = Builder.CreateLoad(Int32Ty, nameMap[varName]);
+          Builder.CreateStore(Builder.CreateNSWSub(tempVal, val), nameMap[varName]);
+          break;
+        }
+          
+      }
+      CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
+    }
 
         virtual void visit(LoopStatement& Node) override
         {
@@ -404,9 +399,9 @@ namespace
           Builder.SetInsertPoint(WhileBodyBB);
           llvm::SmallVector<AssignStatement* > assignStatements = Node.getAssignments();
           for (auto I = assignStatements.begin(), E = assignStatements.end(); I != E; ++I)
-            {
-                (*I)->accept(*this);
-            }
+          {
+            (*I)->accept(*this);
+          }
           Builder.CreateBr(WhileCondBB);
 
           Builder.SetInsertPoint(AfterWhileBB);

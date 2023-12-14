@@ -324,18 +324,15 @@ IfStatement *Parser::parseIf()
         }
         advance();
     }
-    llvm::errs() << "in if too else " << Tok.getText() << '\n';
     if(flag){
         while (Tok.getKind() != Token::eoi)
             advance();
         return nullptr;
     }
-    llvm::errs() << "after error " << Tok.getText() << '\n';
     ElseStatement *el = nullptr;
     if(Tok.is(Token::KW_else)){
         el = parseElse();
     } 
-    llvm::errs() << "after error " << Tok.getText() << '\n';
     return new IfStatement(conditions, statement, elifs, el);
 }
 
@@ -394,7 +391,6 @@ _errorelif:
 
 ElseStatement *Parser::parseElse()
 {
-    llvm::errs() << "in else " << Tok.getText() << '\n';
     ElseStatement *Res = nullptr;
 
     if (!Tok.is(Token::KW_else))
@@ -480,8 +476,6 @@ LoopStatement *Parser::parseLoop()
 
     while (!Tok.is(Token::end))
     {
-        llvm::errs() << Tok.getText() << '\n';
-        llvm::errs() << Tok.getKind() << '\n';
         if(Tok.is(Token::ident)){
             AssignStatement *a;
             a = parseAssign();

@@ -156,17 +156,9 @@ namespace
         Final * ff = (Final *) Node.getRight();
         ff->getVal().getAsInteger(10,RightValue);
         
-        
-        
-
-
-        
         Value* LeftVal= Left;
         llvm::errs()<<RightValue<<"mahan\n";
-        
-
-        
-
+      
         if (RightValue == 0) {
           V = ConstantInt::get(Int32Ty, 1, true);
           break;
@@ -179,17 +171,6 @@ namespace
           V = Left;  
           break;
         }
-        
-      // llvm::BasicBlock* powBB = llvm::BasicBlock::Create(M->getContext(), "pow", MainFn);
-      // llvm::BasicBlock* afterPowBB = llvm::BasicBlock::Create(M->getContext(), "pow.after", MainFn);
-      // Value* V = ConstantInt::get(Int32Ty, 1, true);
-      // Value* b = ConstantInt::get(Int32Ty, 0, true);
-      // Builder.CreateBr(powBB);
-      // Builder.SetInsertPoint(powBB);
-      // V = Builder.CreateNSWMul(V, Left);
-      // b = Builder.CreateNSWAdd(b, Int32One);
-      // Builder.CreateCondBr(Builder.CreateICmpSLT(b, Right), powBB, afterPowBB);
-      // Builder.SetInsertPoint(afterPowBB);
       }
 
       }
@@ -232,7 +213,7 @@ namespace
       {
         llvm::StringRef Var = *var;
         Expression*  Expr = *expr;
-        if (Expr)
+        if (expr != Exprs.end())
         {
           // If there is an expression provided, visit it and get its value.
           Expr->accept(*this);
@@ -282,7 +263,6 @@ namespace
         (*I)->accept(*this);
       }
       Builder.CreateBr(AfterIfBB);
-            llvm::errs() << "hhh\n";
 
 
       llvm::BasicBlock* PrevCondBB = IfCondBB;
@@ -360,11 +340,6 @@ namespace
       }
     }
 
-
-    
-
-
-
     virtual void visit(AssignStatement& Node) override
         {
             // Visit the right-hand side of the assignment and get its value.
@@ -410,8 +385,6 @@ namespace
                 Builder.CreateStore(Builder.CreateNSWSub(tempVal, val), nameMap[varName]);
                 break;
               }
-              // case AssignStatement::AssOp::PlusAssign:
-                //TODO
                 
             }
             CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
@@ -438,7 +411,6 @@ namespace
 
           Builder.SetInsertPoint(AfterWhileBB);
         }
-
 
   };
 };

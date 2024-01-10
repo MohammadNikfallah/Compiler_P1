@@ -1,0 +1,16 @@
+GSM: (Dec | Assign | if | loop)*
+Dec: "int" ident ("," indent)* ((("="|"+="|"-="|"*="|"/=") expr)("," expr)*)? ";"
+Assign: ident ("=" | "+=" | "-=" | "*=" | "/=") expr ";"
+expr: term (( "+" | "-" ) term)*
+term: factor (( "*" | "/") factor)*
+factor: factor "^" Final | Final
+final: ident | number | "(" expr ")"
+ident: ([a-z A-Z])([a-z A-Z 0-9])*
+number: ([1-9])([0-9])* | "-" ([1-9])([0-9])*
+if: "if" Condition ":" "Begin" (Assign)* "end" (elif)* (else)?
+elif: "elif" Condition ":" "Begin" (Assign)* "end"
+else: "else" ":" "Begin" (Assign)* "end"
+loop: "loopc" Condition ":" "Begin" (Assign)* "end"
+Conditions: Condition (("and" | "or") Condition)*
+Condition: expr ConditionSign expr
+ConditionSign: "==" | "!=" | "<" | ">" | "<=" | ">="

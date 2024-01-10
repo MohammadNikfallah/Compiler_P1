@@ -1,5 +1,8 @@
-cd build 
-cmake .. 
+# !/bin/bash
+rm -rf build
+mkdir build
+cd build
+cmake ..
 make
 cd src
 ./gsm "int a,b = 3,2;

@@ -65,6 +65,7 @@ namespace
     // Visit function for the GSM node in the AST.
     virtual void visit(MSM &Node) override
     {
+      llvm::errs() << Node.getStatements().size();
       // Iterate over the children of the GSM node and visit each child.
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
       {

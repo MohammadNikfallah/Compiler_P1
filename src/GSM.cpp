@@ -1,5 +1,6 @@
 #include "CodeGen.h"
 #include "Parser.h"
+#include "Optimize.cpp"
 #include "Sema.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/InitLLVM.h"
@@ -25,9 +26,11 @@ int main(int argc, const char **argv)
 
     // Create a parser object and initialize it with the lexer.
     Parser Parser(Lex);
+    
 
     // Parse the input expression and generate an abstract syntax tree (AST).
     AST *Tree = Parser.parse();
+
 
     // Check if parsing was successful or if there were any syntax errors.
     if (!Tree || Parser.hasError())
@@ -35,6 +38,9 @@ int main(int argc, const char **argv)
         llvm::errs() << "Syntax errors occurred\n";
         return 1;
     }
+
+    Optimization Op;
+    Op.Optimize(Tree);
 
     // Perform semantic analysis on the AST.
     Sema Semantic;

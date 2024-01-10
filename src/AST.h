@@ -53,6 +53,7 @@ private:
 public:
     MSM(llvm::SmallVector<Statement *> Statements) : statements(Statements) {}
     llvm::SmallVector<Statement *> getStatements() { return statements; }
+    void setStatements(llvm::SmallVector<Statement *> InStatements) { statements = InStatements; }
 
     llvm::SmallVector<Statement *>::const_iterator begin() { return statements.begin(); }
 
@@ -286,22 +287,31 @@ public:
         Mod,
         Pow
     };
+    
+    enum ExpType
+    {
+        Expr,
+        Final
+    };
 
 private:
     Expression *Left; // Left-hand side expression
     Expression *Right; // Right-hand side expression
     Operator Op;      // Operator of the binary operation
+    ExpType type;
 
 public:
     Expression(Operator Op, Expression *L, Expression *R) : 
-    Op(Op), Left(L), Right(R) {}
-    Expression() {}
+    Op(Op), Left(L), Right(R) { type = Expr; }
+    Expression() { type = Final; }
 
     Expression *getLeft() { return Left; }
 
     Expression *getRight() { return Right; }
 
     Operator getOperator() { return Op; }
+
+    ExpType getType() { return type;}
 
     virtual void accept(ASTVisitor &V) override
     {

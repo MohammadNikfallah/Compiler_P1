@@ -7,7 +7,7 @@ class InputCheck : public ASTVisitor {
   llvm::StringSet<> Scope; // StringSet to store declared variables
   bool HasError; // Flag to indicate if an error occurred
 
-  enum ErrorType { Twice, Not }; // Enum to represent error types: Twice - variable declared twice, Not - variable not declared
+  enum ErrorType { Twice, Not ,DivideZero}; // Enum to represent error types: Twice - variable declared twice, Not - variable not declared
 
   void error(ErrorType ET, llvm::StringRef V) {
     // Function to report errors

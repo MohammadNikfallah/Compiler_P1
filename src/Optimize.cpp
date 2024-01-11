@@ -5,11 +5,12 @@
 
 
 class OptVisitor : public ASTVisitor {
+
     std::vector<llvm::StringRef> alive;
     std::vector<llvm::StringRef> aliveDec;
     bool b;
+
     public:
-    AST* m;
     OptVisitor(){
         alive.push_back(llvm::StringRef("result"));
         aliveDec.push_back(llvm::StringRef("result"));
@@ -58,7 +59,7 @@ class OptVisitor : public ASTVisitor {
         auto findItr = find(alive.begin(), alive.end(), lValue);
         if(findItr != alive.end()){
             llvm::errs() << lValue;
-                alive.erase(findItr);
+            alive.erase(findItr);
             auto rightV = *(statement.getExprs().begin());
             rightV->accept(*this);
             b = false;
@@ -92,9 +93,8 @@ class OptVisitor : public ASTVisitor {
 class Optimization{
     public:
     void Optimize(AST *Tree) {
-        OptVisitor Op; // Create an instance of the InputCheck class for semantic analysis
-        Tree->accept(Op); // Initiate the semantic analysis by traversing the AST using the accept function
-        
+        OptVisitor Op;
+        Tree->accept(Op);
     }
 };
 

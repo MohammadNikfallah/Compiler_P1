@@ -58,10 +58,12 @@ class OptVisitor : public ASTVisitor {
         llvm::StringRef lValue = *(statement.getVars().begin());
         auto findItr = find(alive.begin(), alive.end(), lValue);
         if(findItr != alive.end()){
-            llvm::errs() << lValue;
             alive.erase(findItr);
-            auto rightV = *(statement.getExprs().begin());
-            rightV->accept(*this);
+            if(statement.getExprs().begin()){
+                auto rightV = statement.getExprs().begin();
+                if(rightV != statement.getExprs().end())
+                    (*rightV)->accept(*this);
+            }
             b = false;
             return;
         }
